@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beginning To Understand - VSCode</title>
+    <style>
+        :root {
+            /* Dracula Theme */
+            --bg-dark: #282a36;
+            --bg-darker: #21222c;
+            --fg: #f8f8f2;
+            --comment: #6272a4;
+            --purple: #bd93f9;
+            --pink: #ff79c6;
+            --green: #50fa7b;
+            --yellow: #f1fa8c;
+            --cyan: #8be9fd;
+            --orange: #ffb86c;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            background-color: #000;
+            height: 100vh;
+            width: 100vw;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* --- 1. MAC DESKTOP BACKGROUND --- */
+        #desktop {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            /* macOS Big Sur / Monterey style abstract wallpaper */
+            background: url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Dock at bottom */
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* --- 2. MAC DOCK --- */
+        .dock-container {
+            margin-bottom: 20px;
+            z-index: 10;
+        }
+
+        .dock {
+            background: rgba(255, 255, 255, 0.2);
+            -webkit-backdrop-filter: blur(15px);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 15px;
+            border-radius: 24px;
+            display: flex;
+            gap: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.4s ease;
+        }
+        
+        /* Hide dock when app is maximized/focused if desired, 
+           but here we keep it for aesthetics */
+        
+        .dock-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+        }
+
+        .dock-icon:hover {
+            transform: scale(1.1) translateY(-10px);
+        }
+
+        /* VS Code Icon Image */
+        .icon-vscode {
+            background: url('https://upload.wikimedia.org/wikipedia/commons/9/9a/Visual_Studio_Code_1.35_icon.svg') no-repeat center/contain;
+        }
+        
+        .icon-finder {
+            background: url('https://upload.wikimedia.org/wikipedia/commons/c/c9/Finder_Icon_macOS_Big_Sur.png') no-repeat center/contain;
+        }
+        
+        .icon-safari {
+            background: url('https://upload.wikimedia.org/wikipedia/commons/5/52/Safari_browser_logo.svg') no-repeat center/contain;
+        }
+
+        /* Animation: Icon Bounce when clicked */
+        .bounce {
+            animation: bounce-anim 1.5s infinite;
+        }
+
+        @keyframes bounce-anim {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-25px);}
+            60% {transform: translateY(-12px);}
+        }
+
+        /* Indication dot below open apps */
+        .dot-indicator {
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 5px;
+            height: 5px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .dock-icon.open .dot-indicator { opacity: 1; }
+
+        /* --- 3. APP WINDOW (VS CODE) --- */
+        #app-window {
+            position: absolute;
+            /* Center the window but start slightly lower for animation */
+            top: 50%; left: 50%;
+            width: 85vw;
+            height: 80vh;
+            background-color: var(--bg-dark);
+            border-radius: 12px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+            
+            /* Initial State: Hidden and tiny, originating from bottom */
+            transform: translate(-50%, -50%) scale(0);
+            transform-origin: 50% 100%; /* Expands from bottom center */
+            opacity: 0;
+            pointer-events: none;
+            
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 5;
+            border: 1px solid rgba(0,0,0,0.5);
+        }
+
+        /* The Opening Animation Class */
+        #app-window.active {
+            transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1); /* Ease Out Expo */
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* --- VSCODE UI STRUCTURE --- */
+        /* Title Bar */
+        .title-bar {
+            height: 30px;
+            background: #2e2f38;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            border-bottom: 1px solid #111;
+        }
+        .traffic-lights { display: flex; gap: 8px; }
+        .win-btn { width: 12px; height: 12px; border-radius: 50%; }
+        .close { background: #ff5f56; }
+        .minimize { background: #ffbd2e; }
+        .maximize { background: #27c93f; }
+        .title-text { flex: 1; text-align: center; color: #999; font-size: 13px; opacity: 0.8; }
+
+        /* Content Area */
+        .main-content {
+            display: flex;
+            height: calc(100% - 30px - 22px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            background: #21222c;
+            border-right: 1px solid #111;
+            display: flex;
+            flex-direction: column;
+            color: #ccc;
+            font-size: 13px;
+        }
+        .sidebar-title { padding: 10px 15px; font-size: 11px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;}
+        .file-entry { padding: 5px 20px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .file-entry.active { background: #373948; color: white; border-left: 2px solid var(--pink); }
+        
+        /* Editor */
+        .editor {
+            flex: 1;
+            background: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        /* Tab */
+        .tabs { height: 35px; background: #191a21; display: flex; align-items: center; }
+        .tab-item { 
+            background: var(--bg-dark); padding: 8px 15px; color: #fff; font-size: 13px; 
+            border-top: 1px solid var(--pink); display: flex; align-items: center; gap: 6px; 
+        }
+
+        /* Code View */
+        .code-container {
+            flex: 1;
+            overflow-y: hidden; /* We handle scrolling via JS logic mostly */
+            padding: 15px 0;
+            display: flex;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        /* Scroll Area */
+        #scroll-view {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            display: flex;
+        }
+        
+        /* Hide scrollbar for cleaner look */
+        #scroll-view::-webkit-scrollbar { width: 8px; background: transparent; }
+        #scroll-view::-webkit-scrollbar-thumb { background: #44475a; border-radius: 4px; }
+
+        .line-nums {
+            width: 60px;
+            text-align: right;
+            padding-right: 15px;
+            color: #6272a4;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .code-content {
+            flex: 1;
+            padding-right: 20px;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            height: 22px;
+            background: var(--purple);
+            color: #282a36;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            font-weight: bold;
+        }
+
+        /* --- CODE HIGHLIGHTING --- */
+        .kwd { color: var(--pink); font-weight: bold; }
+        .func { color: var(--green); }
+        .str { color: var(--yellow); }
+        .cls { color: var(--cyan); font-style: italic; }
+        .cmt { color: var(--comment); font-style: italic; }
+        .num { color: var(--purple); }
+        .blt { color: var(--cyan); }
+        
+        .code-line {
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+            margin-bottom: 2px;
+        }
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        /* Start Prompt Overlay (if needed) */
+        .tooltip {
+            position: absolute;
+            bottom: 100px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="desktop">
+        
+        <!-- App Window -->
+        <div id="app-window">
+            <div class="title-bar">
+                <div class="traffic-lights">
+                    <div class="win-btn close"></div>
+                    <div class="win-btn minimize"></div>
+                    <div class="win-btn maximize"></div>
+                </div>
+                <div class="title-text">sun_yanzi_project — main.py</div>
+            </div>
+            
+            <div class="main-content">
+                <div class="sidebar">
+                    <div class="sidebar-title">Explorer</div>
+                    <div class="file-entry active">
+                        <span>🐍</span> main.py
+                    </div>
+                    <div class="file-entry">
+                        <span>🎵</span> music.mp3
+                    </div>
+                    <div class="file-entry">
+                        <span>📄</span> lyrics.lrc
+                    </div>
+                </div>
+                
+                <div class="editor">
+                    <div class="tabs">
+                        <div class="tab-item">
+                            <span>🐍</span> main.py <span style="font-size:10px; margin-left:5px;">✕</span>
+                        </div>
+                    </div>
+                    
+                    <div class="code-container">
+                        <div id="scroll-view">
+                            <div class="line-nums" id="line-numbers">1<br>2<br>3<br>4</div>
+                            <div class="code-content" id="code-output">
+                                <div class="code-line"><span class="cmt"># Waiting for system initialization...</span></div>
+                                <div class="code-line"><span class="kwd">import</span> time</div>
+                                <div class="code-line"><span class="kwd">from</span> heart <span class="kwd">import</span> Emotion</div>
+                                <div class="code-line"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <span>main*</span>
+                <span>Python 3.10 • UTF-8 • Ln <span id="ln-indicator">4</span></span>
+            </div>
+        </div>
+
+        <!-- Dock -->
+        <div class="tooltip" id="start-tip">Click VS Code to Initialize</div>
+        <div class="dock-container">
+            <div class="dock">
+                <div class="dock-icon icon-finder"></div>
+                <div class="dock-icon icon-safari"></div>
+                <!-- The Trigger Button -->
+                <div class="dock-icon icon-vscode" id="btn-launch">
+                    <div class="dot-indicator"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Element (Auto-load from local path) -->
+    <audio id="audio-player" src="./music.mp3"></audio>
+
+<script>
+    /**
+     * CONFIGURATION
+     */
+    const CONFIG = {
+        lrcPath: './lyrics.lrc',
+        autoPlayDelay: 800, // Time after window opens to start music
+        scrollSpeed: 'smooth'
+    };
+
+    /**
+     * STATE
+     */
+    const state = {
+        isStarted: false,
+        lrcData: [],
+        currentIndex: -1,
+        lineCount: 4
+    };
+
+    const ui = {
+        launchBtn: document.getElementById('btn-launch'),
+        window: document.getElementById('app-window'),
+        audio: document.getElementById('audio-player'),
+        codeOutput: document.getElementById('code-output'),
+        lineNumbers: document.getElementById('line-numbers'),
+        scrollView: document.getElementById('scroll-view'),
+        lnIndicator: document.getElementById('ln-indicator'),
+        tooltip: document.getElementById('start-tip')
+    };
+
+    // 1. Initialize: Show tooltip after a second
+    setTimeout(() => {
+        if(!state.isStarted) ui.tooltip.style.opacity = 1;
+    }, 1500);
+
+    // 2. Fetch Lyrics immediately
+    fetch(CONFIG.lrcPath)
+        .then(response => {
+            if (!response.ok) throw new Error("LRC File not found");
+            return response.text();
+        })
+        .then(text => {
+            parseLRC(text);
+            console.log("Lyrics loaded successfully.");
+        })
+        .catch(err => {
+            console.warn("Failed to load lyrics automatically. Ensure you are running on a server.", err);
+            // Add a fallback comment to the UI
+            appendCodeLine(`<span class="cmt"># Error: Could not load 'lyrics.lrc'. Check console (CORS).</span>`);
+            // Fallback lyrics for testing if file missing
+            const fallback = `[00:00.00]Ready...
+[00:01.00]Please ensure music.mp3 and lyrics.lrc are in folder
+[00:03.00]And run with Live Server...`;
+            parseLRC(fallback);
+        });
+
+    // 3. User Interaction: Launch System
+    ui.launchBtn.addEventListener('click', () => {
+        if (state.isStarted) return;
+        state.isStarted = true;
+        ui.tooltip.style.opacity = 0;
+
+        // Animate Icon
+        ui.launchBtn.classList.add('bounce');
+        ui.launchBtn.classList.add('open');
+
+        // Open Window after short delay
+        setTimeout(() => {
+            ui.window.classList.add('active');
+            
+            // Start Audio & Loop after window animation
+            setTimeout(() => {
+                ui.audio.play().then(() => {
+                    gameLoop();
+                }).catch(e => {
+                    console.log("Audio play failed (interaction policy?):", e);
+                    appendCodeLine(`<span class="cmt"># Audio blocked. Please click document to enable sound.</span>`);
+                });
+            }, CONFIG.autoPlayDelay);
+
+        }, 600);
+    });
+
+    /**
+     * LOGIC
+     */
+
+    function parseLRC(text) {
+        const lines = text.split('\n');
+        const regex = /^\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
+        state.lrcData = [];
+        
+        lines.forEach(line => {
+            const match = line.match(regex);
+            if (match) {
+                const min = parseInt(match[1]);
+                const sec = parseInt(match[2]);
+                const ms = parseInt(match[3]);
+                const content = match[4].trim();
+                const time = min * 60 + sec + ms / 100;
+                if (content) {
+                    state.lrcData.push({ time, content });
+                }
+            }
+        });
+        state.lrcData.sort((a, b) => a.time - b.time);
+    }
+
+    function gameLoop() {
+        if (!state.isStarted) return;
+        
+        const currentTime = ui.audio.currentTime;
+
+        // Check for next line
+        if (state.currentIndex < state.lrcData.length - 1) {
+            const nextLine = state.lrcData[state.currentIndex + 1];
+            if (currentTime >= nextLine.time) {
+                state.currentIndex++;
+                generateCode(nextLine.content);
+            }
+        }
+
+        if (!ui.audio.paused) {
+            requestAnimationFrame(gameLoop);
+        }
+    }
+
+    const templates = [
+        t => `<span class="blt">print</span>(<span class="str">"${escapeHtml(t)}"</span>)`,
+        t => `<span class="kwd">if</span> <span class="arg">understand</span> == <span class="kwd">True</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kwd">return</span> <span class="str">"${escapeHtml(t)}"</span>`,
+        t => `<span class="arg">memory</span> = <span class="str">"${escapeHtml(t)}"</span>`,
+        t => `<span class="kwd">def</span> <span class="func">process_feeling</span>():<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt"># ${escapeHtml(t)}</span><br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kwd">pass</span>`,
+        t => `<span class="kwd">try</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="func">recall</span>(<span class="str">"${escapeHtml(t)}"</span>)<br><span class="kwd">except</span> <span class="cls">Tears</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kwd">break</span>`,
+        t => `<span class="arg">self</span>.heart.<span class="func">append</span>(<span class="str">"${escapeHtml(t)}"</span>)`
+    ];
+
+    function generateCode(text) {
+        const template = templates[Math.floor(Math.random() * templates.length)];
+        const html = template(text);
+        appendCodeLine(html);
+    }
+
+    function appendCodeLine(html) {
+        const div = document.createElement('div');
+        div.className = 'code-line';
+        div.innerHTML = html;
+        ui.codeOutput.appendChild(div);
+
+        // Update Line Numbers
+        const newLines = (html.match(/<br>/g) || []).length + 1;
+        for(let i=0; i<newLines; i++) {
+            state.lineCount++;
+            ui.lineNumbers.innerHTML += `<br>${state.lineCount}`;
+        }
+        ui.lnIndicator.innerText = state.lineCount;
+
+        // Scroll Logic
+        scrollToBottom();
+    }
+
+    function scrollToBottom() {
+        ui.scrollView.scrollTo({
+            top: ui.scrollView.scrollHeight,
+            behavior: 'smooth'
+        });
+    }
+
+    const escapeHtml = (unsafe) => {
+        return unsafe
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }
+
+</script>
+</body>
+</html>
