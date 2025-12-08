@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Beginning To Understand - VSCode</title>
+    <title>Beginning To Understand - Mac OS</title>
     <style>
         :root {
             /* Dracula Theme */
@@ -22,21 +22,21 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
             overflow: hidden;
             background-color: #000;
             height: 100vh;
             width: 100vw;
-            -webkit-user-select: none;
             user-select: none;
+            cursor: default;
         }
 
         /* --- 1. MAC DESKTOP BACKGROUND --- */
         #desktop {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            /* macOS Big Sur / Monterey style abstract wallpaper */
-            background: url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover;
+            /* macOS Big Sur / Monterey style wallpaper */
+            background: url('https://images.unsplash.com/photo-1605142859619-24037359ee58?q=80&w=3870&auto=format&fit=crop') no-repeat center center/cover;
             display: flex;
             flex-direction: column;
             justify-content: flex-end; /* Dock at bottom */
@@ -44,15 +44,94 @@
             overflow: hidden;
         }
 
-        /* --- 2. MAC DOCK --- */
+        /* --- 2. MENU BAR (NEW) --- */
+        .menu-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 28px;
+            background: rgba(0, 0, 0, 0.2); /* Semi-transparent */
+            backdrop-filter: blur(25px);      /* The Mac "Frost" effect */
+            -webkit-backdrop-filter: blur(25px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 18px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 1000; /* Always on top */
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+        }
+
+        .menu-left, .menu-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            height: 100%;
+        }
+
+        /* Apple Logo */
+        .apple-logo-svg {
+            fill: #fff;
+            height: 14px;
+            width: 12px;
+            margin-right: 5px;
+            opacity: 0.9;
+        }
+
+        .app-name {
+            font-weight: 700; /* Bold for active app */
+        }
+
+        .menu-item {
+            opacity: 0.9;
+            cursor: default;
+        }
+        .menu-item:hover {
+            opacity: 1;
+        }
+
+        /* Right Icons */
+        .status-icon {
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+        }
+        .battery-icon {
+            width: 22px;
+            height: 10px;
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 3px;
+            position: relative;
+            padding: 1px;
+        }
+        .battery-level {
+            width: 70%;
+            height: 100%;
+            background: #fff;
+            border-radius: 1px;
+        }
+        .battery-icon::after {
+            content: '';
+            position: absolute;
+            right: -3px;
+            top: 2px;
+            width: 2px;
+            height: 4px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 0 2px 2px 0;
+        }
+
+        /* --- 3. MAC DOCK --- */
         .dock-container {
             margin-bottom: 20px;
-            z-index: 10;
+            z-index: 100;
         }
 
         .dock {
             background: rgba(255, 255, 255, 0.2);
-            -webkit-backdrop-filter: blur(15px);
             backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 10px 15px;
@@ -63,9 +142,6 @@
             transition: transform 0.4s ease;
         }
         
-        /* Hide dock when app is maximized/focused if desired, 
-           but here we keep it for aesthetics */
-        
         .dock-icon {
             width: 60px;
             height: 60px;
@@ -73,13 +149,14 @@
             cursor: pointer;
             transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             position: relative;
+            background-color: #ddd; /* Fallback */
         }
 
         .dock-icon:hover {
             transform: scale(1.1) translateY(-10px);
         }
 
-        /* VS Code Icon Image */
+        /* VS Code Icon */
         .icon-vscode {
             background: url('https://upload.wikimedia.org/wikipedia/commons/9/9a/Visual_Studio_Code_1.35_icon.svg') no-repeat center/contain;
         }
@@ -92,18 +169,13 @@
             background: url('https://upload.wikimedia.org/wikipedia/commons/5/52/Safari_browser_logo.svg') no-repeat center/contain;
         }
 
-        /* Animation: Icon Bounce when clicked */
-        .bounce {
-            animation: bounce-anim 1.5s infinite;
-        }
-
+        .bounce { animation: bounce-anim 1.5s infinite; }
         @keyframes bounce-anim {
             0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
             40% {transform: translateY(-25px);}
             60% {transform: translateY(-12px);}
         }
 
-        /* Indication dot below open apps */
         .dot-indicator {
             position: absolute;
             bottom: -8px;
@@ -118,40 +190,34 @@
         }
         .dock-icon.open .dot-indicator { opacity: 1; }
 
-        /* --- 3. APP WINDOW (VS CODE) --- */
+        /* --- 4. APP WINDOW (VS CODE) --- */
         #app-window {
             position: absolute;
-            /* Center the window but start slightly lower for animation */
             top: 50%; left: 50%;
             width: 85vw;
             height: 80vh;
             background-color: var(--bg-dark);
             border-radius: 12px;
             box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
-            
-            /* Initial State: Hidden and tiny, originating from bottom */
             transform: translate(-50%, -50%) scale(0);
-            transform-origin: 50% 100%; /* Expands from bottom center */
+            transform-origin: 50% 100%;
             opacity: 0;
             pointer-events: none;
-            
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            z-index: 5;
+            z-index: 50;
             border: 1px solid rgba(0,0,0,0.5);
         }
 
-        /* The Opening Animation Class */
         #app-window.active {
-            transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1); /* Ease Out Expo */
+            transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
             transform: translate(-50%, -50%) scale(1);
             opacity: 1;
             pointer-events: all;
         }
 
-        /* --- VSCODE UI STRUCTURE --- */
-        /* Title Bar */
+        /* Window UI */
         .title-bar {
             height: 30px;
             background: #2e2f38;
@@ -167,13 +233,7 @@
         .maximize { background: #27c93f; }
         .title-text { flex: 1; text-align: center; color: #999; font-size: 13px; opacity: 0.8; }
 
-        /* Content Area */
-        .main-content {
-            display: flex;
-            height: calc(100% - 30px - 22px);
-        }
-
-        /* Sidebar */
+        .main-content { display: flex; height: calc(100% - 30px - 22px); }
         .sidebar {
             width: 220px;
             background: #21222c;
@@ -187,73 +247,20 @@
         .file-entry { padding: 5px 20px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
         .file-entry.active { background: #373948; color: white; border-left: 2px solid var(--pink); }
         
-        /* Editor */
-        .editor {
-            flex: 1;
-            background: var(--bg-dark);
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-        
-        /* Tab */
+        .editor { flex: 1; background: var(--bg-dark); display: flex; flex-direction: column; position: relative; }
         .tabs { height: 35px; background: #191a21; display: flex; align-items: center; }
-        .tab-item { 
-            background: var(--bg-dark); padding: 8px 15px; color: #fff; font-size: 13px; 
-            border-top: 1px solid var(--pink); display: flex; align-items: center; gap: 6px; 
-        }
+        .tab-item { background: var(--bg-dark); padding: 8px 15px; color: #fff; font-size: 13px; border-top: 1px solid var(--pink); display: flex; align-items: center; gap: 6px; }
 
-        /* Code View */
-        .code-container {
-            flex: 1;
-            overflow-y: hidden; /* We handle scrolling via JS logic mostly */
-            padding: 15px 0;
-            display: flex;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 16px;
-            line-height: 1.6;
-        }
-
-        /* Scroll Area */
-        #scroll-view {
-            width: 100%;
-            height: 100%;
-            overflow-y: auto;
-            display: flex;
-        }
-        
-        /* Hide scrollbar for cleaner look */
+        .code-container { flex: 1; overflow-y: hidden; padding: 15px 0; display: flex; font-family: 'Consolas', 'Monaco', monospace; font-size: 16px; line-height: 1.6; }
+        #scroll-view { width: 100%; height: 100%; overflow-y: auto; display: flex; }
         #scroll-view::-webkit-scrollbar { width: 8px; background: transparent; }
         #scroll-view::-webkit-scrollbar-thumb { background: #44475a; border-radius: 4px; }
 
-        .line-nums {
-            width: 60px;
-            text-align: right;
-            padding-right: 15px;
-            color: #6272a4;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        
-        .code-content {
-            flex: 1;
-            padding-right: 20px;
-        }
+        .line-nums { width: 60px; text-align: right; padding-right: 15px; color: #6272a4; font-size: 14px; line-height: 1.6; }
+        .code-content { flex: 1; padding-right: 20px; }
+        .status-bar { height: 22px; background: var(--purple); color: #282a36; font-size: 12px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-weight: bold; }
 
-        /* Status Bar */
-        .status-bar {
-            height: 22px;
-            background: var(--purple);
-            color: #282a36;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 10px;
-            font-weight: bold;
-        }
-
-        /* --- CODE HIGHLIGHTING --- */
+        /* Syntax Highlighting */
         .kwd { color: var(--pink); font-weight: bold; }
         .func { color: var(--green); }
         .str { color: var(--yellow); }
@@ -262,32 +269,61 @@
         .num { color: var(--purple); }
         .blt { color: var(--cyan); }
         
-        .code-line {
-            opacity: 0;
-            animation: fadeIn 0.5s forwards;
-            margin-bottom: 2px;
-        }
+        .code-line { opacity: 0; animation: fadeIn 0.5s forwards; margin-bottom: 2px; }
         @keyframes fadeIn { to { opacity: 1; } }
 
-        /* Start Prompt Overlay (if needed) */
-        .tooltip {
-            position: absolute;
-            bottom: 100px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 1s;
-        }
+        .tooltip { position: absolute; bottom: 100px; background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; pointer-events: none; opacity: 0; transition: opacity 1s; z-index: 200; }
     </style>
 </head>
 <body>
 
     <div id="desktop">
         
+        <!-- NEW: Mac Menu Bar -->
+        <div class="menu-bar">
+            <div class="menu-left">
+                <!-- Apple Logo SVG -->
+                <svg class="apple-logo-svg" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 52.3-11.4 69.5-34.3z"/>
+                </svg>
+                <span class="app-name">Finder</span>
+                <span class="menu-item">File</span>
+                <span class="menu-item">Edit</span>
+                <span class="menu-item">View</span>
+                <span class="menu-item">Go</span>
+                <span class="menu-item">Window</span>
+                <span class="menu-item">Help</span>
+            </div>
+            <div class="menu-right">
+                <!-- Battery Icon -->
+                <div class="status-icon">
+                    <div class="battery-icon"><div class="battery-level"></div></div>
+                </div>
+                <!-- Wifi Icon (Unicode) -->
+                <div class="status-icon" style="font-size: 16px;">
+                   <svg width="18" height="18" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 21L12 21.01M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM12 18C13.6569 18 15 16.6569 15 15C15 13.3431 13.6569 12 12 12C10.3431 12 9 13.3431 9 15C9 16.6569 10.3431 18 12 18Z" fill="white"/></svg>
+                   <!-- Simple Wifi Arc SVG -->
+                   <svg width="18" height="14" viewBox="0 0 24 18" fill="white" style="position:absolute; opacity:0; /* Placeholder if needed later */"></svg>
+                   <span style="font-weight:bold; font-size:16px;">🛜</span>
+                </div>
+                <!-- Search Icon -->
+                <div class="status-icon" style="font-size: 14px;">🔍</div>
+                <!-- Control Center -->
+                <div class="status-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/>
+                        <circle cx="8" cy="6" r="2" fill="white"/>
+                        <circle cx="16" cy="12" r="2" fill="white"/>
+                        <circle cx="8" cy="18" r="2" fill="white"/>
+                    </svg>
+                </div>
+                <!-- Time -->
+                <div class="status-icon" id="clock-display" style="min-width: 130px; text-align: right;">
+                    Mon Dec 8 11:38
+                </div>
+            </div>
+        </div>
+
         <!-- App Window -->
         <div id="app-window">
             <div class="title-bar">
@@ -385,8 +421,31 @@
         lineNumbers: document.getElementById('line-numbers'),
         scrollView: document.getElementById('scroll-view'),
         lnIndicator: document.getElementById('ln-indicator'),
-        tooltip: document.getElementById('start-tip')
+        tooltip: document.getElementById('start-tip'),
+        appName: document.querySelector('.app-name') // Access menu bar app name
     };
+
+    /* --- CLOCK LOGIC (New) --- */
+    function updateClock() {
+        const now = new Date();
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        const dayName = days[now.getDay()];
+        const monthName = months[now.getMonth()];
+        const dateNum = now.getDate();
+        let hours = now.getHours();
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        
+        // Use 24h format or 12h depending on preference, sticking to 24h like Mac default sometimes, or 12h
+        // Let's go with standard Mac 24h style e.g. "Mon Dec 8 11:38"
+        const timeString = `${dayName} ${monthName} ${dateNum} ${hours}:${minutes}`;
+        document.getElementById('clock-display').textContent = timeString;
+    }
+    setInterval(updateClock, 1000);
+    updateClock(); // Initial call
+
+    /* --- INIT LOGIC --- */
 
     // 1. Initialize: Show tooltip after a second
     setTimeout(() => {
@@ -405,9 +464,7 @@
         })
         .catch(err => {
             console.warn("Failed to load lyrics automatically. Ensure you are running on a server.", err);
-            // Add a fallback comment to the UI
             appendCodeLine(`<span class="cmt"># Error: Could not load 'lyrics.lrc'. Check console (CORS).</span>`);
-            // Fallback lyrics for testing if file missing
             const fallback = `[00:00.00]Ready...
 [00:01.00]Please ensure music.mp3 and lyrics.lrc are in folder
 [00:03.00]And run with Live Server...`;
@@ -419,6 +476,11 @@
         if (state.isStarted) return;
         state.isStarted = true;
         ui.tooltip.style.opacity = 0;
+
+        // Change Menu Bar App Name to "Code" when launching
+        setTimeout(() => {
+            ui.appName.textContent = "Code"; // Simulate app focus change
+        }, 1000);
 
         // Animate Icon
         ui.launchBtn.classList.add('bounce');
