@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "index.cjs",
+      "use": "@vercel/node",
+      "config": { "includeFiles": ["node_modules/ip2region/**"] }
+    }
+  ],
+  "routes": [{ "src": "/(.*)", "dest": "/index.cjs" }]
+}

@@ -1,0 +1,191 @@
+[
+  {
+    "file": "icons/safari.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/c6d93db1-d714-47ae-a19b-0ffd7095280e",
+    "page": "https://support.apple.com/guide/safari/welcome/mac",
+    "note": "Apple 官方 macOS 27 用户指南原图，保留透明 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 91824,
+    "sha256": "23ab5380264b1d94af0e191429f024d8ef4365cb80536d0f029d506f5ce5173f"
+  },
+  {
+    "file": "icons/messages.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/126c8a75-d3c5-4333-9d4f-d1ce3c5b53c1",
+    "page": "https://support.apple.com/guide/messages/welcome/mac",
+    "note": "Apple 官方 macOS 27 用户指南原图，保留透明 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 110735,
+    "sha256": "90bd460555807d38e2b8cd68bfb924b4b452908ae4f7f9a7d2ffec5c726dc0d0"
+  },
+  {
+    "file": "icons/terminal.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/39c3cf79-78d9-4c4b-b30c-64cac5415a89",
+    "page": "https://support.apple.com/guide/terminal/welcome/mac",
+    "note": "Apple 官方 macOS 27 用户指南原图，保留透明 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 88583,
+    "sha256": "4050f7e4ec584e28ffc281e3c910f44732da711611904e6a5a98c3c49c1077c5"
+  },
+  {
+    "file": "icons/calendar.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/4dbc02d7-ac3b-4563-a91c-0dcea817af54",
+    "page": "https://support.apple.com/guide/calendar/welcome/mac",
+    "note": "Apple 官方 macOS 27 用户指南原图，保留透明 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 83826,
+    "sha256": "2b8be1801d5bd8e5ccfa1109273345f921cc364e1e684f16730969d924ffc785"
+  },
+  {
+    "file": "icons/facetime.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/89362d26-6a0c-4477-a971-86f12c698a83",
+    "page": "https://support.apple.com/guide/facetime/welcome/mac",
+    "note": "Apple 官方 macOS 27 用户指南原图，保留透明 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 104119,
+    "sha256": "85ae979d4949a46c88fd805915f782c492bbec950958880213caf4cc932a45ea"
+  },
+  {
+    "file": "icons/calculator.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/f7117fb3-d7c1-4d41-9a46-c6b1bb98590f",
+    "page": "https://support.apple.com/guide/calculator/welcome/mac",
+    "note": "Apple 官方 macOS 27 用户指南原图，保留透明 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 106163,
+    "sha256": "e7d16423eadfb4a4f9e11b12a3da0b5bfcef0da0346332aa29a600fa60712004"
+  },
+  {
+    "file": "icons/phone.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/c8d057b4-01f4-4a88-be54-7b94de88790f",
+    "page": "https://support.apple.com/guide/phoneapp/welcome/mac",
+    "note": "Apple 官方 macOS 27 用户指南原图，保留透明 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 105715,
+    "sha256": "37f6ba45f802c97a54d1c8aac4e9fbd9282f22c9688ef7b8dc0a13d982a53ab0"
+  },
+  {
+    "file": "icons/weather.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/6e84927c-dea3-412e-bef3-239439aaf6a2",
+    "page": "https://support.apple.com/guide/weather-mac/welcome/mac",
+    "note": "Apple 官方 macOS 27 用户指南原图，保留透明 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 103562,
+    "sha256": "0b5f58596874b50c07ee4f963e5c77ab02459eaacbb82291c22e9dfdac28e69c"
+  },
+  {
+    "file": "icons/contacts.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/7377f0ae-bdad-4046-bf75-f1b99fbda51c",
+    "page": "https://support.apple.com/guide/contacts/welcome/mac",
+    "note": "Apple 官方 macOS 27 用户指南原图，保留透明 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 94874,
+    "sha256": "2b55ff3a1be6f44d65b4fe8938a04eba9f21a4ef81c63b1429fdc2fb2d81d97d"
+  },
+  {
+    "file": "icons/notes.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/125e6326-eda8-4a3b-a719-7fdcd6a40271",
+    "page": "https://support.apple.com/guide/notes/welcome/mac",
+    "note": "Apple 官方 macOS 27 用户指南原图，保留透明 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 82832,
+    "sha256": "c78dcc1b5ad95d9bdc58088a58ed332e5c84693d7c0d7bcf776f2474ed33654f"
+  },
+  {
+    "file": "icons/photos.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/51695954-58a6-41f8-9aa0-0457032e6638",
+    "page": "https://support.apple.com/guide/photos/welcome/mac",
+    "note": "Apple 官方 macOS 27 用户指南原图，保留透明 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 107957,
+    "sha256": "22e3b21fc6513c11a1e744c8b8df93388b678bd28fe94eafee55001b5a98a67c"
+  },
+  {
+    "file": "icons/finder.png",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/b/b9/Finder_Icon_macOS_Tahoe.png",
+    "page": "https://commons.wikimedia.org/wiki/File:Finder_Icon_macOS_Tahoe.png",
+    "note": "macOS Tahoe 26；Commons 说明源自 macOS 系统文件，作者 Apple。不是 macOS 27 独立校验版本。",
+    "dimensions": "824 × 824 (RGBA)",
+    "bytes": 279917,
+    "sha256": "c6ba3c460ea77557fd55bf2e6c060070edea464b235c738eb6693ca2403a104a"
+  },
+  {
+    "file": "icons/settings.png",
+    "url": "https://raw.githubusercontent.com/DocSystem/bigsur-icons-for-catalina/master/Applications/System%20Preferences.icns",
+    "page": "https://github.com/DocSystem/bigsur-icons-for-catalina/blob/master/Applications/System%20Preferences.icns",
+    "note": "Big Sur System Preferences 旧版原始 ICNS 的最大帧，无重绘。第三方归档，非 Apple 托管；未独立核验提取的具体系统 build。",
+    "dimensions": "1024 × 1024 (RGBA)",
+    "bytes": 582539,
+    "sha256": "ea2952b6118d89731f0fd2d60fbe1947017af0f423aab4255fc6e2473e159d80"
+  },
+  {
+    "file": "icons/gmail.svg",
+    "url": "https://www.gstatic.com/images/branding/productlogos/gmail_2026/v2/web/192px.svg",
+    "page": "https://workspace.google.com/intl/en/products/gmail/",
+    "note": "Google 官方 Gmail 2026 网页品牌图标，原始 SVG；Gmail 没有对应官方原生 Mac 应用图标。",
+    "dimensions": "192 × 192 SVG viewBox",
+    "bytes": 1298,
+    "sha256": "0a242131424b796a26247a8edd41d66fa294da6d177897526a19b7e81aedfdb8"
+  },
+  {
+    "file": "icons/netease.png",
+    "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/d8/af/76/d8af7618-9d17-b8cb-b985-f3c99f6b6f1e/AppIcon-0-85-220-0-4-2x-sRGB.png/512x512bb.png",
+    "page": "https://apps.apple.com/cn/app/id1233593954",
+    "note": "网易邮箱大师 Mac App Store 官方开发者图标（iTunes lookup entity=macSoftware）。",
+    "dimensions": "512 × 512 (RGBA)",
+    "bytes": 31224,
+    "sha256": "ec501745f89cb83de1245a0434099e17c1e1b80ba3d479e302309d317f6bba3f"
+  },
+  {
+    "file": "icons/github.png",
+    "url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+    "page": "https://github.com/logos",
+    "note": "GitHub 官方 GitHub Mark 品牌图形；本应用展示 GitHub 网页资料，不冒充 GitHub Desktop 图标。",
+    "dimensions": "560 × 560 (P)",
+    "bytes": 7249,
+    "sha256": "6d6ef7bede0416b6ebee2014be5852576dbce89235fe16ea5c44ed01bd522132"
+  },
+  {
+    "file": "icons/vscode.png",
+    "url": "https://code.visualstudio.com/assets/branding/code-stable.png",
+    "page": "https://code.visualstudio.com/brand",
+    "note": "Microsoft 官方 VS Code stable 品牌 PNG。",
+    "dimensions": "1024 × 1024 (RGBA)",
+    "bytes": 114937,
+    "sha256": "7ac29e00cd66e549acc2ea6a99a813f92cb23a6d165293be6959845670f0c5a4"
+  },
+  {
+    "file": "wallpapers/dark.jpg",
+    "url": "https://raw.githubusercontent.com/LAYTAT/macOS-Wallpapers/main/15-Sequoia-Dark-6K.jpg",
+    "page": "https://github.com/LAYTAT/macOS-Wallpapers",
+    "note": "Apple macOS Sequoia 深色默认壁纸；第三方归档（其 README 标注源自 512 Pixels），非 macOS 27 壁纸。",
+    "dimensions": "6016 × 6016 (RGB)",
+    "bytes": 8138402,
+    "sha256": "c99d65b7827d462d0c53e18e5d36cb7c187fa1726f90bee5831ae90dd9318ad6"
+  },
+  {
+    "file": "wallpapers/light.jpg",
+    "url": "https://raw.githubusercontent.com/LAYTAT/macOS-Wallpapers/main/15-Sequoia-Light-6K.jpg",
+    "page": "https://github.com/LAYTAT/macOS-Wallpapers",
+    "note": "Apple macOS Sequoia 浅色默认壁纸；第三方归档（其 README 标注源自 512 Pixels），非 macOS 27 壁纸。",
+    "dimensions": "6016 × 6016 (RGB)",
+    "bytes": 873980,
+    "sha256": "9195b7b202234b51ba81169b92441bf43aa8c572801a35ddd288b1aa0de2a5f9"
+  },
+  {
+    "file": "icons/qq.png",
+    "url": "D:\\Apps\\Tencent\\QQNT\\versions\\9.9.36-53644\\resources\\app\\resource\\favicon.ico",
+    "page": "本机腾讯 QQ 官方安装资源",
+    "note": "腾讯 QQ NT 9.9.36-53644（Windows 安装资源）；从 ICO 提取 256px 最大帧，无重绘；不是 Mac QQ 原生 ICNS。",
+    "dimensions": "256 × 256 (RGBA)",
+    "bytes": 16834,
+    "sha256": "4db0b91e095089076a5574ce8c8287ee6d901b87efc52c9c0ac7a1ebab247013"
+  },
+  {
+    "file": "wallpapers/original.jpg",
+    "url": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop",
+    "page": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop",
+    "note": "沿用旧版 index.html 的 Unsplash 壁纸 URL；不是 Apple/macOS 官方壁纸。下载保留原始 JPEG 字节，未重绘或重新压缩。",
+    "dimensions": "2070 × 1380 (RGB)",
+    "bytes": 491798,
+    "sha256": "c3e9e609d5d9eb35cc626a880799b9893c520d7fba11c22fc500419b55a9fc32"
+  }
+]

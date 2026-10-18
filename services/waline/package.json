@@ -1,0 +1,15 @@
+{
+  "name": "lozic-guestbook",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.cjs",
+  "engines": {
+    "node": ">=22.12.0 <23"
+  },
+  "scripts": {
+    "start": "node local.cjs"
+  },
+  "dependencies": {
+    "@waline/vercel": "1.42.0"
+  }
+}
