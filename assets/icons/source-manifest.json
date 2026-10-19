@@ -138,10 +138,11 @@
     "file": "icons/github.png",
     "url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
     "page": "https://github.com/logos",
-    "note": "GitHub 官方 GitHub Mark 品牌图形；本应用展示 GitHub 网页资料，不冒充 GitHub Desktop 图标。",
-    "dimensions": "560 × 560 (P)",
-    "bytes": 7249,
-    "sha256": "6d6ef7bede0416b6ebee2014be5852576dbce89235fe16ea5c44ed01bd522132"
+    "note": "GitHub Mark 的仓库现有深色版本。本地文件并非此前链接的官方原图字节；本轮保留已有图标，分别记录本地文件与官方源文件哈希。",
+    "dimensions": "560 × 560 (RGB)",
+    "bytes": 13550,
+    "sha256": "73351a4949ae62d47231f6da1ac8ba5b6f624f3b6c86c3ad84b8fb97f5f7458d",
+    "sourceSha256": "6d6ef7bede0416b6ebee2014be5852576dbce89235fe16ea5c44ed01bd522132"
   },
   {
     "file": "icons/vscode.png",
@@ -187,5 +188,68 @@
     "dimensions": "2070 × 1380 (RGB)",
     "bytes": 491798,
     "sha256": "c3e9e609d5d9eb35cc626a880799b9893c520d7fba11c22fc500419b55a9fc32"
+  },
+  {
+    "file": "icons/reminders.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/a9fb59ba-be76-4aed-84de-2782b0d5cacf",
+    "page": "https://support.apple.com/guide/reminders/welcome/mac",
+    "note": "Apple 官方用户指南页首图标，保留下载的原始 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 89504,
+    "sha256": "1c8aa699ef55945d68755b17a30df7ba32362f6d63d0eebdecbf8dc37b37c51a"
+  },
+  {
+    "file": "icons/maps.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/3d5ebbbe-050b-4cf7-b154-e24fd5a3bfbe",
+    "page": "https://support.apple.com/guide/maps/welcome/mac",
+    "note": "Apple 官方用户指南页首图标，保留下载的原始 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 123388,
+    "sha256": "d2f224a07ba0a88985f0f9b5ec424d024d809f2b7ffa2f6243539b99762cce1d"
+  },
+  {
+    "file": "icons/appstore.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/e67ebad9-5ab3-480c-a337-e95ed372130b",
+    "page": "https://support.apple.com/guide/app-store/welcome/mac",
+    "note": "Apple 官方用户指南页首图标，保留下载的原始 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 139650,
+    "sha256": "5b30c2928d0c0c35add4d060fa159b7500c86d97c09419c2382c5d1f9dc2d4f1"
+  },
+  {
+    "file": "icons/clock.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/d0bb87cf-ea7a-4743-badc-e6650cd2d30d",
+    "page": "https://support.apple.com/guide/clock-mac/welcome/mac",
+    "note": "Apple 官方用户指南页首图标，保留下载的原始 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 127718,
+    "sha256": "0d9583c8068be9fd00aefc6216d227ed4319b2c96040de8217d0a3457d658b8c"
+  },
+  {
+    "file": "icons/stickies.png",
+    "url": "https://ipcdn-web.apple.com/assets/v2/web/c9f6917f-e0ab-471c-b8c9-adfcef08373f",
+    "page": "https://support.apple.com/guide/stickies/welcome/mac",
+    "note": "Apple 官方用户指南页首图标，保留下载的原始 PNG。",
+    "dimensions": "400 × 400 (RGBA)",
+    "bytes": 95640,
+    "sha256": "ebf486220e412bfd2bc5d88f43252c46f1dad2d500797735c86d9d9bca5ac87c"
+  },
+  {
+    "file": "icons/trash.png",
+    "url": "https://guis.org/icons/macos/system/trash-empty/1010.png",
+    "page": "https://guis.org/macos/icons/",
+    "note": "第三方归档的旧版 Apple 系统图形，32px 原图；待取得更高清原始资源。",
+    "dimensions": "32 × 32 (RGBA)",
+    "bytes": 1409,
+    "sha256": "c6d06535b7ffe5399a3e778193569339f60a7b00e87bd7300c639c9be0ff7b33"
+  },
+  {
+    "file": "icons/trash-full.png",
+    "url": "https://guis.org/icons/macos/system/trash-full/1010.png",
+    "page": "https://guis.org/macos/icons/",
+    "note": "第三方归档的旧版 Apple 系统图形，32px 原图；待取得更高清原始资源。",
+    "dimensions": "32 × 32 (RGBA)",
+    "bytes": 2056,
+    "sha256": "cdccb179a70c7bd940dd06bb7bd797591af894b113e00231077881a7c60e50c9"
   }
 ]

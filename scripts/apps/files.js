@@ -1,9 +1,10 @@
 import { profile, publicNotes, tracks, photos, appInfo } from "../config.js";
 import { h, icon, on, store, uid, download, empty } from "../ui.js";
+import { allPlaces } from "../places.js";
 
 export function mountFinder(ctx) {
   const { root, signal } = ctx;
-  let folder = "home",
+  let folder = ctx.data.folder || "home",
     view = store.get("finderView", "grid"),
     selected = null,
     query = "",
@@ -11,9 +12,11 @@ export function mountFinder(ctx) {
     index = 0,
     sort = "name";
   const folders = [
+    ["recent", "最近使用", "history"],
     ["home", "Lozic", "home"],
     ["desktop", "桌面", "grid"],
     ["documents", "文稿", "file"],
+    ["local", "我的笔记", "file"],
     ["photos", "图片", "image"],
     ["music", "音乐", "music"],
     ["applications", "应用程序", "folder"],
@@ -62,6 +65,37 @@ export function mountFinder(ctx) {
   ctx.setTitle("Lozic");
   root.innerHTML = `<div class="app-toolbar finder-toolbar"><button class="icon-button" data-finder="back" aria-label="后退">${icon("back", 18)}</button><button class="icon-button" data-finder="forward" aria-label="前进">${icon("forward", 18)}</button><b class="finder-folder-title">Lozic</b><span class="spacer"></span><div class="segmented"><button data-view="grid" aria-label="图标视图">${icon("grid", 17)}</button><button data-view="list" aria-label="列表视图">${icon("list", 17)}</button></div><button class="icon-button" data-finder="sort" aria-label="排序">${icon("controls", 18)}</button><button class="icon-button" data-finder="preview" aria-label="快速查看">${icon("info", 18)}</button><label class="search-field">${icon("search", 14)}<input placeholder="搜索" aria-label="搜索文件"></label></div><div class="split-app"><aside class="app-sidebar finder-sidebar"><h4>个人收藏</h4>${folders.map(([id, name, symbol]) => `<button class="sidebar-item" data-folder="${id}">${icon(symbol, 17)}${name}</button>`).join("")}<h4>位置</h4><button class="sidebar-item" data-folder="home">${icon("home", 17)}Lozic 的 Mac</button></aside><main class="app-main finder-main"></main></div><div class="finder-path"></div><footer class="app-status finder-status"></footer>`;
   function list() {
+    contents.local = store
+      .get("notes", [])
+      .filter((n) => !n.deleted)
+      .map((n) => ({
+        id: n.id,
+        name: `${n.title || "未命名笔记"}.md`,
+        type: "note",
+        target: n.id,
+        body: n.body,
+        local: true,
+      }));
+    contents.desktop = [
+      { id: "documents", name: "关于我", type: "folder", target: "documents" },
+      { id: "site", name: "lozic7.com", type: "url", target: profile.website },
+      ...ctx.desktop.desktopApps.map((id) => ({
+        id,
+        name: appInfo[id].name,
+        type: "app",
+        target: id,
+      })),
+    ];
+    const pool = new Map(
+      Object.entries(contents)
+        .filter(([key]) => key !== "recent")
+        .flatMap(([, items]) => items)
+        .map((i) => [`${i.type}:${i.id}`, i]),
+    );
+    contents.recent = store
+      .get("finderRecents", [])
+      .map((r) => pool.get(r.key))
+      .filter(Boolean);
     const values = query
       ? [
           ...new Map(
@@ -72,13 +106,13 @@ export function mountFinder(ctx) {
           ).values(),
         ]
       : contents[folder] || [];
-    return values
-      .filter((i) => i.name.toLowerCase().includes(query))
-      .sort((a, b) =>
-        sort === "kind"
-          ? a.type.localeCompare(b.type) || a.name.localeCompare(b.name)
-          : a.name.localeCompare(b.name, "zh-CN"),
-      );
+    const matching = values.filter((i) => i.name.toLowerCase().includes(query));
+    if (folder === "recent" && !query) return matching;
+    return matching.sort((a, b) =>
+      sort === "kind"
+        ? a.type.localeCompare(b.type) || a.name.localeCompare(b.name)
+        : a.name.localeCompare(b.name, "zh-CN"),
+    );
   }
   function itemIcon(item) {
     if (item.type === "folder")
@@ -117,7 +151,7 @@ export function mountFinder(ctx) {
     root.querySelector(".finder-path").innerHTML =
       `${icon("home", 12)}<button data-folder="home">Lozic</button> ${folder !== "home" ? `${icon("forward", 10)}<span>${h(folders.find((f) => f[0] === folder)?.[1])}</span>` : ""}`;
     root.querySelector(".finder-status").textContent =
-      `${items.length} 个项目 · 公开的个人文件夹`;
+      `${items.length} 个项目 · ${folder === "local" ? "我的笔记，仅此浏览器" : folder === "recent" ? "此浏览器最近打开的内容" : "站内个人文件夹"}`;
   }
   function navigate(target, push = true) {
     folder = target;
@@ -133,6 +167,16 @@ export function mountFinder(ctx) {
   }
   function open(item) {
     if (!item) return;
+    if (item.type !== "folder") {
+      const key = `${item.type}:${item.id}`;
+      store.set(
+        "finderRecents",
+        [
+          { key, time: Date.now() },
+          ...store.get("finderRecents", []).filter((i) => i.key !== key),
+        ].slice(0, 20),
+      );
+    }
     if (item.type === "folder") navigate(item.target);
     if (item.type === "note") ctx.open("notes", { note: item.target });
     if (item.type === "music")
@@ -215,6 +259,58 @@ export function mountFinder(ctx) {
         [
           { label: "打开", action: () => open(item) },
           { label: "快速查看", action: () => preview(item) },
+          ...(item.local
+            ? [
+                {
+                  label: "重命名",
+                  action: () =>
+                    ctx.dialog({
+                      title: "重命名笔记",
+                      body: `<input name="title" aria-label="笔记名称" value="${h(item.name.replace(/\.md$/, ""))}" maxlength="200">`,
+                      buttons: [
+                        { id: "cancel", label: "取消" },
+                        { id: "save", label: "保存", primary: true },
+                      ],
+                      onAction: (action, dialog) => {
+                        if (action === "save") {
+                          const title = dialog
+                            .querySelector("input")
+                            .value.trim();
+                          if (!title) return false;
+                          const notes = store.get("notes", []),
+                            note = notes.find((n) => n.id === item.id);
+                          if (note) {
+                            note.title = title;
+                            note.updatedAt = Date.now();
+                            store.set("notes", notes);
+                            ctx.desktop.windows
+                              .get("notes")
+                              ?.instance?.receive?.({ reload: true });
+                            render();
+                          }
+                        }
+                        return true;
+                      },
+                    }),
+                },
+                {
+                  label: "移到废纸篓",
+                  action: () => {
+                    const notes = store.get("notes", []),
+                      note = notes.find((n) => n.id === item.id);
+                    if (note) {
+                      note.deleted = true;
+                      store.set("notes", notes);
+                      ctx.desktop.windows
+                        .get("notes")
+                        ?.instance?.receive?.({ reload: true });
+                      ctx.desktop.updateTrash();
+                      render();
+                    }
+                  },
+                },
+              ]
+            : []),
           ...(item.type === "note"
             ? [
                 {
@@ -290,233 +386,21 @@ export function mountFinder(ctx) {
     },
     { signal },
   );
-  render();
-  return {
-    receive(data) {
-      if (data.folder) navigate(data.folder);
-    },
-  };
-}
-
-export function mountNotes(ctx) {
-  const { root, signal } = ctx;
-  let own = store.get("notes", []),
-    stars = store.get("noteStars", []),
-    folder = "all",
-    selected = ctx.data.note || "welcome",
-    query = "";
-  const all = () => [
-    ...publicNotes.map((n) => ({ ...n, readonly: true })),
-    ...own,
-  ];
-  const current = () => all().find((n) => n.id === selected);
-  const save = () => {
-    store.set("notes", own);
-    store.set("noteStars", stars);
-  };
-  ctx.setTitle("备忘录");
-  root.innerHTML = `<div class="app-toolbar notes-toolbar"><button class="icon-button" data-note="sidebar" aria-label="显示或隐藏文件夹">${icon("sidebar", 20)}</button><button class="icon-button" data-note="new" aria-label="新建本地笔记">${icon("edit", 20)}</button><button class="icon-button" data-note="delete" aria-label="移至最近删除">${icon("trash", 18)}</button><span class="spacer"></span><button class="icon-button" data-note="star" aria-label="收藏笔记">${icon("star", 19)}</button><button class="icon-button" data-note="export" aria-label="导出笔记">${icon("share", 19)}</button><label class="search-field">${icon("search", 14)}<input placeholder="搜索" aria-label="搜索笔记"></label></div><div class="notes-app"><aside class="notes-folders"><h4>Lozic</h4>${[
-    ["all", "所有笔记"],
-    ["about", "关于我"],
-    ["music", "音乐"],
-    ["starred", "收藏"],
-    ["local", "我的本地笔记"],
-    ["trash", "最近删除"],
-  ]
-    .map(
-      ([id, label]) =>
-        `<button data-note-folder="${id}">${icon(id === "starred" ? "star" : "folder", 16)}${label}</button>`,
-    )
-    .join(
-      "",
-    )}<small>你的笔记仅保存在此浏览器。</small></aside><aside class="notes-list"></aside><main class="note-editor"></main></div>`;
-  function filtered() {
-    return all()
-      .filter((n) => {
-        if (folder === "trash") return n.deleted;
-        if (n.deleted) return false;
-        return (
-          folder === "all" ||
-          (folder === "about" && n.folder === "关于我") ||
-          (folder === "music" && n.folder === "音乐") ||
-          (folder === "starred" && stars.includes(n.id)) ||
-          (folder === "local" && !n.readonly)
-        );
-      })
-      .filter((n) => `${n.title} ${n.body}`.toLowerCase().includes(query));
-  }
-  function renderList() {
-    root
-      .querySelectorAll("[data-note-folder]")
-      .forEach((b) =>
-        b.classList.toggle("active", b.dataset.noteFolder === folder),
-      );
-    root.querySelector(".notes-list").innerHTML =
-      filtered()
-        .map(
-          (n) =>
-            `<button class="${n.id === selected ? "selected" : ""}" data-note-id="${h(n.id)}"><b>${stars.includes(n.id) ? "★ " : ""}${h(n.title || "新笔记")}</b><span>${h(n.body.slice(0, 70) || "还没有内容")}</span><small>${n.readonly ? "主人的公开笔记" : "仅此浏览器"}</small></button>`,
-        )
-        .join("") || '<p class="notes-list-empty">没有找到笔记</p>';
-    const n = current();
-    root.querySelector("[data-note=delete]").disabled =
-      !n || n.readonly || n.deleted;
-    root
-      .querySelector("[data-note=star]")
-      .classList.toggle("starred", !!n && stars.includes(n.id));
-  }
-  function renderEditor() {
-    const n = current(),
-      el = root.querySelector(".note-editor");
-    if (!n) {
-      el.innerHTML = empty(
-        "选一篇笔记",
-        "也可以新建一篇，只留在你自己的浏览器里。",
-        "file",
-      );
-      return;
-    }
-    if (n.deleted) {
-      el.innerHTML = `<div class="empty-state"><h2>${h(n.title)}</h2><p>这篇笔记在最近删除中。</p><button class="mac-button" data-note="restore">恢复笔记</button></div>`;
-      return;
-    }
-    el.innerHTML = `<div class="note-meta">${n.readonly ? "Lozic 的公开笔记" : "本地笔记 · 自动保存"} ${n.readonly ? icon("lock", 11) : ""}</div>${n.readonly ? `<h1>${h(n.title)}</h1><div class="public-note-body">${h(n.body).replace(/\n/g, "<br>")}</div><div class="note-related"><button data-note="messages">${icon("chat", 16)} 留一句话</button>${n.id === "music" ? '<button data-note="play">听这首歌 →</button>' : ""}${n.id === "contact" ? '<button data-note="contacts">打开通讯录 →</button>' : ""}</div>` : `<input class="note-title-input" aria-label="笔记标题" value="${h(n.title)}" placeholder="新笔记" maxlength="100"><textarea class="note-body-input" aria-label="笔记内容" placeholder="记一点什么…">${h(n.body)}</textarea>`}`;
-  }
-  function render() {
-    renderList();
-    renderEditor();
-  }
-  on(
-    root,
-    "click",
-    "[data-note-folder]",
-    (e, b) => {
-      folder = b.dataset.noteFolder;
-      selected = filtered()[0]?.id || null;
-      render();
-    },
-    signal,
-  );
-  on(
-    root,
-    "click",
-    "[data-note-id]",
-    (e, b) => {
-      selected = b.dataset.noteId;
-      render();
-    },
-    signal,
-  );
-  on(
-    root,
-    "input",
-    ".notes-toolbar input",
-    (e, b) => {
-      query = b.value.toLowerCase();
-      renderList();
-    },
-    signal,
-  );
-  on(
-    root,
-    "input",
-    ".note-title-input,.note-body-input",
-    (e, b) => {
-      const n = own.find((n) => n.id === selected);
-      if (!n) return;
-      if (b.matches("input")) n.title = b.value;
-      else n.body = b.value;
-      n.updatedAt = Date.now();
-      save();
-      renderList();
-    },
-    signal,
-  );
-  on(
-    root,
-    "click",
-    "[data-note]",
-    (e, b) => {
-      const a = b.dataset.note,
-        n = current();
-      if (a === "new") {
-        const note = {
-          id: uid(),
-          title: "",
-          body: "",
-          folder: "本地",
-          updatedAt: Date.now(),
-        };
-        own.unshift(note);
-        selected = note.id;
-        folder = "local";
-        save();
-        render();
-        root.querySelector(".note-title-input").focus();
-      }
-      if (a === "sidebar")
-        root.querySelector(".notes-folders").hidden =
-          !root.querySelector(".notes-folders").hidden;
-      if (a === "delete" && n && !n.readonly) {
-        own.find((x) => x.id === n.id).deleted = true;
-        save();
-        selected = filtered()[0]?.id || null;
-        render();
-      }
-      if (a === "restore" && n) {
-        own.find((x) => x.id === n.id).deleted = false;
-        save();
-        folder = "local";
-        render();
-      }
-      if (a === "star" && n) {
-        stars = stars.includes(n.id)
-          ? stars.filter((id) => id !== n.id)
-          : [...stars, n.id];
-        save();
-        renderList();
-      }
-      if (a === "export" && n)
-        download(
-          `${n.title || "笔记"}.md`,
-          `# ${n.title}\n\n${n.body}`,
-          "text/markdown;charset=utf-8",
-        );
-      if (a === "messages") ctx.open("messages");
-      if (a === "contacts") ctx.open("contacts");
-      if (a === "play") ctx.open("vscode", { play: true });
-    },
-    signal,
-  );
-  root.addEventListener(
-    "click",
+  window.addEventListener(
+    "lozic:storage",
     (e) => {
-      if (e.target.closest("[data-note=delete],[data-note=restore]"))
-        ctx.desktop.updateTrash();
+      if (
+        ["notes", "desktopApps"].includes(e.detail.key) ||
+        (e.detail.key === "finderRecents" && folder === "recent")
+      )
+        render();
     },
     { signal },
   );
   render();
   return {
     receive(data) {
-      if (data.reload) own = store.get("notes", []);
-      if (data.note) {
-        selected = data.note;
-        folder = "all";
-      }
-      render();
-    },
-    menus: {
-      file: [
-        {
-          label: "新建本地笔记",
-          action: () => root.querySelector("[data-note=new]").click(),
-        },
-        {
-          label: "导出当前笔记",
-          action: () => root.querySelector("[data-note=export]").click(),
-        },
-      ],
+      if (data.folder) navigate(data.folder);
     },
   };
 }
@@ -528,12 +412,14 @@ export function mountPhotos(ctx) {
     ...photos,
   ];
   let favorites = store.get("photoFavorites", []),
+    annotations = store.get("photoAnnotations", {}),
+    showInfo = false,
     album = "all",
     query = "",
     selected = ctx.data.photo || null,
     zoom = 1;
   ctx.setTitle("照片");
-  root.innerHTML = `<div class="app-toolbar photos-toolbar"><button class="icon-button" data-photo="back" aria-label="返回图库">${icon("back", 20)}</button><b>图库</b><span class="spacer"></span><button class="icon-button" data-photo="favorite" aria-label="收藏照片">${icon("heart", 19)}</button><a class="icon-button photo-download" download aria-label="下载照片">${icon("download", 19)}</a><label class="search-field">${icon("search", 14)}<input aria-label="搜索照片" placeholder="搜索"></label></div><div class="split-app"><aside class="app-sidebar photos-sidebar"><h4>照片</h4><button class="sidebar-item" data-album="all">${icon("image", 17)}图库</button><button class="sidebar-item" data-album="favorites">${icon("heart", 17)}个人收藏</button><h4>我的相簿</h4>${[...new Set(collection.map((p) => p.album))].map((a) => `<button class="sidebar-item" data-album="${h(a)}">${icon("folder", 17)}${h(a)}</button>`).join("")}</aside><main class="app-main photos-main"></main></div>`;
+  root.innerHTML = `<div class="app-toolbar photos-toolbar"><button class="icon-button" data-photo="back" aria-label="返回图库">${icon("back", 20)}</button><b>图库</b><span class="spacer"></span><button class="icon-button" data-photo="info" aria-label="照片信息与备注">${icon("info", 19)}</button><button class="icon-button" data-photo="favorite" aria-label="收藏照片">${icon("heart", 19)}</button><a class="icon-button photo-download" download aria-label="下载照片">${icon("download", 19)}</a><label class="search-field">${icon("search", 14)}<input aria-label="搜索照片" placeholder="搜索"></label></div><div class="split-app"><aside class="app-sidebar photos-sidebar"><h4>照片</h4><button class="sidebar-item" data-album="all">${icon("image", 17)}图库</button><button class="sidebar-item" data-album="favorites">${icon("heart", 17)}个人收藏</button><h4>我的相簿</h4>${[...new Set(collection.map((p) => p.album))].map((a) => `<button class="sidebar-item" data-album="${h(a)}">${icon("folder", 17)}${h(a)}</button>`).join("")}</aside><main class="app-main photos-main"></main></div>`;
   const filtered = () =>
     collection.filter(
       (p) =>
@@ -547,7 +433,9 @@ export function mountPhotos(ctx) {
       .querySelectorAll("[data-album]")
       .forEach((b) => b.classList.toggle("active", b.dataset.album === album));
     const item = collection.find((p) => p.id === selected);
+    const annotation = item ? annotations[item.id] || {} : {};
     root.querySelector("[data-photo=back]").disabled = !item;
+    root.querySelector("[data-photo=info]").disabled = !item;
     root.querySelector("[data-photo=favorite]").disabled = !item;
     root
       .querySelector("[data-photo=favorite]")
@@ -560,7 +448,18 @@ export function mountPhotos(ctx) {
     }
     const el = root.querySelector(".photos-main");
     if (item) {
-      el.innerHTML = `<div class="photo-viewer"><div class="photo-canvas"><img src="${h(item.src)}" alt="${h(item.title)}" style="transform:scale(${zoom})"></div><footer><button class="icon-button" data-photo="previous" aria-label="上一张">${icon("back", 19)}</button><div><b>${h(item.title)}</b><span>${h(item.album)}</span></div><button class="icon-button" data-photo="next" aria-label="下一张">${icon("forward", 19)}</button><span class="spacer"></span><label>缩放 <input data-photo-zoom type="range" min=".5" max="3" step=".1" value="${zoom}" aria-label="照片缩放"></label></footer></div>`;
+      el.innerHTML = `<div class="photo-viewer"><div class="photo-display-area"><div class="photo-canvas"><img src="${h(item.src)}" alt="${h(item.title)}" style="transform:scale(${zoom})"></div>${
+        showInfo
+          ? `<aside class="photo-story-panel"><h3>照片故事</h3><p>${h(item.caption || item.story || "这张照片来自主人提供的图片。")}</p><label>我的备注<textarea data-photo-note rows="4" maxlength="2000" placeholder="记住这一刻…">${h(annotation.text || "")}</textarea></label><label>关联地点<select data-photo-place><option value="">不关联</option>${allPlaces()
+              .map(
+                (p) =>
+                  `<option value="${h(p.id)}" ${(annotation.placeId ?? item.placeId) === p.id ? "selected" : ""}>${h(p.name)}</option>`,
+              )
+              .join(
+                "",
+              )}</select></label><label>关联歌曲<select data-photo-track><option value="">不关联</option>${tracks.map((t) => `<option value="${t.id}" ${(annotation.trackId ?? item.trackId) === t.id ? "selected" : ""}>${h(t.title)}</option>`).join("")}</select></label>${(annotation.placeId ?? item.placeId) ? `<button data-photo="place">在地图中查看 →</button>` : ""}${(annotation.trackId ?? item.trackId) ? `<button data-photo="track">听听这首歌 →</button>` : ""}<small>你的备注与关联仅保存在此浏览器</small></aside>`
+          : ""
+      }</div><footer><button class="icon-button" data-photo="previous" aria-label="上一张">${icon("back", 19)}</button><div><b>${h(item.title)}</b><span>${h(item.album)}</span></div><button class="icon-button" data-photo="next" aria-label="下一张">${icon("forward", 19)}</button><span class="spacer"></span><label>缩放 <input data-photo-zoom type="range" min=".5" max="3" step=".1" value="${zoom}" aria-label="照片缩放"></label></footer></div>`;
     } else {
       const list = filtered();
       el.innerHTML = `<div class="content-heading"><h1>${album === "all" ? "所有照片" : album === "favorites" ? "个人收藏" : h(album)}</h1><p>${list.length} 张照片 · 主人提供的图片</p></div>${list.length ? `<div class="photo-grid">${list.map((p) => `<button data-photo-id="${h(p.id)}"><img src="${h(p.src)}" alt="${h(p.title)}"><span>${h(p.title)}</span></button>`).join("")}</div>` : empty("这里还没有照片", "收藏喜欢的图片，或者稍后再来看看。", "image")}`;
@@ -617,6 +516,16 @@ export function mountPhotos(ctx) {
     (e, b) => {
       const a = b.dataset.photo;
       if (a === "back") selected = null;
+      if (a === "info") showInfo = !showInfo;
+      const item = collection.find((p) => p.id === selected),
+        annotation = annotations[selected] || {};
+      if (a === "place")
+        ctx.open("maps", { placeId: annotation.placeId ?? item?.placeId });
+      if (a === "track")
+        ctx.open("vscode", {
+          track: annotation.trackId ?? item?.trackId,
+          play: true,
+        });
       if (a === "favorite" && selected) {
         favorites = favorites.includes(selected)
           ? favorites.filter((id) => id !== selected)
@@ -631,6 +540,33 @@ export function mountPhotos(ctx) {
             ?.id;
         zoom = 1;
       }
+      render();
+    },
+    signal,
+  );
+  on(
+    root,
+    "input",
+    "[data-photo-note]",
+    (e, b) => {
+      annotations[selected] = {
+        ...(annotations[selected] || {}),
+        text: b.value,
+      };
+      store.set("photoAnnotations", annotations);
+    },
+    signal,
+  );
+  on(
+    root,
+    "change",
+    "[data-photo-place],[data-photo-track]",
+    (e, b) => {
+      annotations[selected] = {
+        ...(annotations[selected] || {}),
+        [b.hasAttribute("data-photo-place") ? "placeId" : "trackId"]: b.value,
+      };
+      store.set("photoAnnotations", annotations);
       render();
     },
     signal,

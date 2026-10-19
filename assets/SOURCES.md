@@ -25,12 +25,24 @@
 | `icons/settings.png` | 1024 × 1024 (RGBA) | Big Sur System Preferences 旧版原始 ICNS 的最大帧，无重绘。第三方归档，非 Apple 托管；未独立核验提取的具体系统 build。<br>[https://github.com/DocSystem/bigsur-icons-for-catalina/blob/master/Applications/System%20Preferences.icns](https://github.com/DocSystem/bigsur-icons-for-catalina/blob/master/Applications/System%20Preferences.icns) | [原始资源](https://raw.githubusercontent.com/DocSystem/bigsur-icons-for-catalina/master/Applications/System%20Preferences.icns) |
 | `icons/gmail.svg` | 192 × 192 SVG viewBox | Google 官方 Gmail 2026 网页品牌图标，原始 SVG；Gmail 没有对应官方原生 Mac 应用图标。<br>[https://workspace.google.com/intl/en/products/gmail/](https://workspace.google.com/intl/en/products/gmail/) | [原始资源](https://www.gstatic.com/images/branding/productlogos/gmail_2026/v2/web/192px.svg) |
 | `icons/netease.png` | 512 × 512 (RGBA) | 网易邮箱大师 Mac App Store 官方开发者图标（iTunes lookup entity=macSoftware）。<br>[https://apps.apple.com/cn/app/id1233593954](https://apps.apple.com/cn/app/id1233593954) | [原始资源](https://is1-ssl.mzstatic.com/image/thumb/Purple126/v4/d8/af/76/d8af7618-9d17-b8cb-b985-f3c99f6b6f1e/AppIcon-0-85-220-0-4-2x-sRGB.png/512x512bb.png) |
-| `icons/github.png` | 560 × 560 (P) | GitHub 官方 GitHub Mark 品牌图形；本应用展示 GitHub 网页资料，不冒充 GitHub Desktop 图标。<br>[https://github.com/logos](https://github.com/logos) | [原始资源](https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png) |
+| `icons/github.png` | 560 × 560 (RGB) | GitHub Mark 的仓库现有深色版本，与链接的官方源文件字节不同，保留已有图标；本应用展示 GitHub 网页资料，不冒充 GitHub Desktop 图标。<br>[https://github.com/logos](https://github.com/logos) | [原始资源](https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png) |
 | `icons/vscode.png` | 1024 × 1024 (RGBA) | Microsoft 官方 VS Code stable 品牌 PNG。<br>[https://code.visualstudio.com/brand](https://code.visualstudio.com/brand) | [原始资源](https://code.visualstudio.com/assets/branding/code-stable.png) |
 | `wallpapers/dark.jpg` | 6016 × 6016 (RGB) | Apple macOS Sequoia 深色默认壁纸；第三方归档（其 README 标注源自 512 Pixels），非 macOS 27 壁纸。<br>[https://github.com/LAYTAT/macOS-Wallpapers](https://github.com/LAYTAT/macOS-Wallpapers) | [原始资源](https://raw.githubusercontent.com/LAYTAT/macOS-Wallpapers/main/15-Sequoia-Dark-6K.jpg) |
 | `wallpapers/light.jpg` | 6016 × 6016 (RGB) | Apple macOS Sequoia 浅色默认壁纸；第三方归档（其 README 标注源自 512 Pixels），非 macOS 27 壁纸。<br>[https://github.com/LAYTAT/macOS-Wallpapers](https://github.com/LAYTAT/macOS-Wallpapers) | [原始资源](https://raw.githubusercontent.com/LAYTAT/macOS-Wallpapers/main/15-Sequoia-Light-6K.jpg) |
 | `icons/qq.png` | 256 × 256 (RGBA) | 腾讯 QQ NT 9.9.36-53644（Windows 安装资源）；从 ICO 提取 256px 最大帧，无重绘；不是 Mac QQ 原生 ICNS。<br>本机腾讯 QQ 官方安装资源 | `D:\Apps\Tencent\QQNT\versions\9.9.36-53644\resources\app\resource\favicon.ico` |
 | `wallpapers/original.jpg` | 2070 × 1380 (RGB) | 沿用旧版 `index.html` 的 Unsplash 壁纸，不是 Apple/macOS 官方壁纸；保留下载原始字节。 | [原始资源](https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop) |
+
+## 2026-10-19 新增应用资源
+
+本轮新增五个应用图标均来自 Apple 用户指南，已下载到本地，网页加载不依赖图标 CDN。
+
+| 本地文件 | 尺寸 | 来源 | 原始资源 |
+| --- | --- | --- | --- |
+| `icons/reminders.png` | 400 × 400 (RGBA) | [Apple 官方用户指南](https://support.apple.com/guide/reminders/welcome/mac)，原始透明 PNG | [原始资源](https://ipcdn-web.apple.com/assets/v2/web/a9fb59ba-be76-4aed-84de-2782b0d5cacf) |
+| `icons/maps.png` | 400 × 400 (RGBA) | [Apple 官方用户指南](https://support.apple.com/guide/maps/welcome/mac)，原始透明 PNG | [原始资源](https://ipcdn-web.apple.com/assets/v2/web/3d5ebbbe-050b-4cf7-b154-e24fd5a3bfbe) |
+| `icons/appstore.png` | 400 × 400 (RGBA) | [Apple 官方用户指南](https://support.apple.com/guide/app-store/welcome/mac)，原始透明 PNG | [原始资源](https://ipcdn-web.apple.com/assets/v2/web/e67ebad9-5ab3-480c-a337-e95ed372130b) |
+| `icons/clock.png` | 400 × 400 (RGBA) | [Apple 官方用户指南](https://support.apple.com/guide/clock-mac/welcome/mac)，原始透明 PNG | [原始资源](https://ipcdn-web.apple.com/assets/v2/web/d0bb87cf-ea7a-4743-badc-e6650cd2d30d) |
+| `icons/stickies.png` | 400 × 400 (RGBA) | [Apple 官方用户指南](https://support.apple.com/guide/stickies/welcome/mac)，原始透明 PNG | [原始资源](https://ipcdn-web.apple.com/assets/v2/web/c9f6917f-e0ab-471c-b8c9-adfcef08373f) |
 
 ## 二维码
 
@@ -45,7 +57,7 @@
 - QQ 图标取自用户已安装的 Windows QQ NT；保留企鹅的真实品牌图形，但不是从 Mac 版 QQ 提取。
 - Gmail 与 GitHub 使用其网页品牌标志，不伪装成不存在的 Mac Gmail 客户端或 GitHub Desktop。
 - `wallpapers/original.jpg` 是用户要求保留的旧版 Unsplash 壁纸，与两款 Sequoia 深浅壁纸分别提供；未推断摄影师或作品名称。
-- QQ 只做 ICO 最大图层提取、System Preferences 只做 ICNS 最大图层转为无损 PNG；其余图标和壁纸保留下载原始字节，无重绘／重新压缩。
+- QQ 只做 ICO 最大图层提取、System Preferences 只做 ICNS 最大图层转为无损 PNG；GitHub 保留仓库现有深色版本，清单分别记录本地文件与官方源图的不同哈希；其余图标和壁纸保留下载原始字节，无重绘／重新压缩。
 - Apple、Tencent、Google、NetEase、GitHub、Microsoft 图标与壁纸的名称、商标和版权归各自权利人；来源页面的具体授权与品牌使用说明仍适用。个人桌面为独立网页项目，不表示得到这些公司的认可。
 
 ## 校验

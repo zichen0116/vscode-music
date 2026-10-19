@@ -8,7 +8,19 @@ import { mountCalculator, mountTerminal } from "./apps/tools.js";
 import { mountMail } from "./apps/mail.js";
 import { mountGitHub } from "./apps/github.js";
 import { mountContacts, mountPhone, mountSettings } from "./apps/personal.js";
-import { mountFinder, mountNotes, mountPhotos } from "./apps/files.js";
+import { mountFinder, mountPhotos } from "./apps/files.js";
+import { mountNotes } from "./apps/notes.js";
+import { mountReminders } from "./apps/reminders.js";
+import { mountMaps } from "./apps/maps.js";
+import { mountAppStore } from "./apps/appstore.js";
+import { mountClock } from "./apps/clock.js";
+import { mountStickies, mountDesktopStickies } from "./apps/stickies.js";
+import {
+  reminderData,
+  saveReminderData,
+  dueTimestamp,
+} from "./reminders-data.js";
+import { clockData, saveClock, timerRemaining } from "./clock-data.js";
 import { mountCalendar } from "./apps/calendar.js";
 import { mountWeather } from "./apps/weather.js";
 import { weather, weatherDescription } from "./weather.js";
@@ -32,9 +44,78 @@ const registry = {
   photos: mountPhotos,
   calendar: mountCalendar,
   weather: mountWeather,
+  reminders: mountReminders,
+  maps: mountMaps,
+  appstore: mountAppStore,
+  clock: mountClock,
+  stickies: mountStickies,
 };
 registry.trash = mountTrash;
 const desktop = new Desktop(registry);
+mountDesktopStickies(desktop);
+const reminderStartedAt = Date.now();
+const notifiedReminders = new Set();
+let notifiedTimerDeadline = null;
+function checkLocalReminders() {
+  const data = reminderData(),
+    now = Date.now();
+  let changed = false;
+  for (const item of data.items) {
+    const due = dueTimestamp(item);
+    if (
+      !item.deleted &&
+      !item.completed &&
+      !item.notifiedAt &&
+      !notifiedReminders.has(`${item.id}:${due}`) &&
+      due !== null &&
+      due >= reminderStartedAt &&
+      due <= now
+    ) {
+      item.notifiedAt = now;
+      notifiedReminders.add(`${item.id}:${due}`);
+      changed = true;
+      desktop.notify("提醒事项", item.title, () =>
+        desktop.open("reminders", { editId: item.id }),
+      );
+    }
+  }
+  if (changed) {
+    try {
+      saveReminderData(data);
+    } catch (error) {
+      desktop.toast("提醒记录未能保存", error.message);
+    }
+  }
+  desktop.updateReminders?.();
+}
+function checkTimer() {
+  const data = clockData();
+  if (
+    data.timer.running &&
+    timerRemaining(data.timer) <= 0 &&
+    data.timer.deadline !== notifiedTimerDeadline
+  ) {
+    notifiedTimerDeadline = data.timer.deadline;
+    data.timer.running = false;
+    data.timer.finished = true;
+    data.timer.remaining = 0;
+    saveClock(data);
+    desktop.notify("时间到了", data.timer.label || "倒计时已结束", () =>
+      desktop.open("clock", { tab: "timer" }),
+    );
+  }
+}
+setInterval(checkLocalReminders, 30000);
+setInterval(checkTimer, 1000);
+window.addEventListener("lozic:storage", (e) => {
+  if (e.detail.key === "reminders") {
+    desktop.updateReminders?.();
+    desktop.updateTrash();
+  }
+  if (e.detail.key === "stickies") desktop.updateTrash();
+});
+checkLocalReminders();
+checkTimer();
 guestbook.addEventListener("newmessage", (e) => {
   const { root, record } = e.detail;
   desktop.notify(

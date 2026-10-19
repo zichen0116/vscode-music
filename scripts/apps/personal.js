@@ -1,4 +1,9 @@
-import { profile, wallpapers, defaultDock } from "../config.js";
+import {
+  profile,
+  wallpapers,
+  defaultDock,
+  defaultDesktopApps,
+} from "../config.js";
 import { guestbook } from "../guestbook.js";
 import { player } from "../player.js";
 import {
@@ -297,6 +302,7 @@ export function mountSettings(ctx) {
         ["calendar", "日历"],
         ["weather", "天气"],
         ["music", "正在播放"],
+        ["reminders", "提醒事项"],
         ["profile", "个人名片"],
       ]
         .map(
@@ -426,6 +432,10 @@ export function mountSettings(ctx) {
               store.set("dock", defaultDock);
               ctx.desktop.renderDock();
               ctx.desktop.resetWidgets();
+              ctx.desktop.desktopApps = [...defaultDesktopApps];
+              store.set("desktopApps", defaultDesktopApps);
+              store.remove("desktopPositions");
+              ctx.desktop.renderFiles();
               render();
             }
             return true;

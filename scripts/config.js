@@ -11,6 +11,9 @@ export const profile = {
   github: "zichen0116",
   website: "https://lozic7.com",
   phone: "",
+  callURL: "",
+  welcomeVideo: "",
+  welcomeAudio: "",
 };
 export const guestbookConfig = {
   // Set to your deployed Waline server, e.g. https://your-guestbook.vercel.app
@@ -51,6 +54,13 @@ export const publicNotes = [
 ];
 export const milestones = [];
 export const photos = [];
+// Only add places and wishes that you want to share publicly.
+export const personalPlaces = [];
+export const publicWishes = [];
+export const mapConfig = {
+  searchURL: "https://photon.komoot.io/api/",
+  resultLimit: 6,
+};
 export const wallpapers = [
   { id: "dark", name: "夜色", src: "assets/wallpapers/dark.jpg" },
   { id: "light", name: "日光", src: "assets/wallpapers/light.jpg" },
@@ -150,8 +160,31 @@ export const appInfo = {
     h: 510,
     icon: "trash.png",
   },
+  reminders: {
+    name: "提醒事项",
+    english: "Reminders",
+    w: 940,
+    h: 620,
+    icon: "reminders.png",
+  },
+  maps: { name: "地图", english: "Maps", w: 1080, h: 680, icon: "maps.png" },
+  appstore: {
+    name: "App Store",
+    english: "应用中心",
+    w: 1030,
+    h: 670,
+    icon: "appstore.png",
+  },
+  clock: { name: "时钟", english: "Clock", w: 820, h: 580, icon: "clock.png" },
+  stickies: {
+    name: "便签",
+    english: "Stickies",
+    w: 620,
+    h: 460,
+    icon: "stickies.png",
+  },
 };
-export const defaultDock = [
+export const previousDefaultDock = [
   "finder",
   "safari",
   "qq",
@@ -165,4 +198,20 @@ export const defaultDock = [
   "facetime",
   "calculator",
   "settings",
+];
+export const defaultDock = [
+  "finder",
+  "safari",
+  "qq",
+  "messages",
+  "vscode",
+  "notes",
+  "settings",
+];
+export const defaultDesktopApps = [
+  "notes",
+  "reminders",
+  "maps",
+  "appstore",
+  "photos",
 ];

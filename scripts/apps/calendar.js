@@ -1,4 +1,5 @@
 import { milestones } from "../config.js";
+import { reminderCalendarEvents } from "../reminders-data.js";
 import { h, icon, on, store, localDate, uid, download } from "../ui.js";
 
 const weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
@@ -47,6 +48,7 @@ export function mountCalendar(ctx) {
   const allEvents = () => [
     ...(showPublic ? milestones.map((e) => ({ ...e, public: true })) : []),
     ...(showLocal ? events.filter((e) => !e.deleted) : []),
+    ...(showLocal ? reminderCalendarEvents() : []),
   ];
   ctx.setTitle("日历");
   root.innerHTML = `<div class="app-toolbar calendar-toolbar"><button class="icon-button" data-cal="sidebar" aria-label="日历侧栏">${icon("sidebar", 20)}</button><button class="icon-button" data-cal="new" aria-label="新建提醒">${icon("plus", 22)}</button><span class="spacer"></span><div class="segmented">${[
@@ -123,6 +125,10 @@ export function mountCalendar(ctx) {
     }
   }
   function editEvent(event, defaultDate = localDate(selected), hour = 9) {
+    if (event?.sourceReminder) {
+      ctx.open("reminders", { editId: event.sourceReminder });
+      return;
+    }
     const original = event,
       readonly = event?.public;
     const dialog = ctx.dialog({
@@ -291,6 +297,13 @@ export function mountCalendar(ctx) {
       }
     },
     signal,
+  );
+  window.addEventListener(
+    "lozic:storage",
+    (e) => {
+      if (e.detail.key === "reminders") render();
+    },
+    { signal },
   );
   render();
   return {

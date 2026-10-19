@@ -1,26 +1,41 @@
 # 实现状态与交接
 
-更新：2026-10-18。当前分支：`codex/personal-mac-desktop`。
+更新：2026-10-19。当前分支：`codex/personal-mac-desktop`。
 
 ## 已写入项目的功能
 
-| 范围 | 实现位置 | 状态 |
-| --- | --- | --- |
-| 窗口、Dock、菜单、Spotlight、通知、桌面组件 | `scripts/desktop.js` | 已实现共用行为 |
-| VS Code 与唯一播放器、歌词同步 | `scripts/apps/vscode.js`、`scripts/player.js` | 已保留并扩展原音乐体验 |
-| QQ 登录页、预设聊天、资料卡、二维码 | `scripts/apps/qq.js` | 已按用户截图构建交互元素 |
-| Messages 与 FaceTime | `scripts/apps/messages.js`、`scripts/guestbook.js` | 共用真实 Waline 数据，支持公开留言、回复、歌曲引用与状态反馈 |
-| Safari、Gmail、网易邮箱、GitHub | `scripts/apps/safari.js`、`mail.js`、`github.js` | 已实现浏览、站点来信、本地草稿和真实外链交接 |
-| 终端、计算器 | `scripts/apps/tools.js`、`scripts/calculator.js` | 虚拟命令与真实计算 |
-| Finder、备忘录、照片 | `scripts/apps/files.js` | 公开文件、可编辑本地笔记、图库与图片查看 |
-| 日历、天气 | `scripts/apps/calendar.js`、`weather.js`、`scripts/weather.js` | 本地提醒、日／周／月、日程导出；选城市获取 Open-Meteo 数据 |
-| 电话、通讯录、设置 | `scripts/apps/personal.js` | 联系名片、拨号体验与可用联系替代入口、外观偏好 |
-| 废纸篓 | `scripts/apps/trash.js` | 桌面及 Dock 入口；本地笔记和邮件副本的恢复、确认清空 |
-| 资源 | `assets/` | 真实图标、本机 QQ 图标、头像、三套壁纸及网站二维码；来源逐项记录 |
-| 留言服务 | `services/waline/` | 可安装运行，持久本地 SQLite；包含生产 PostgreSQL 环境模板和 Vercel 入口 |
-| 静态发布 | `tools/build-static.mjs`、根 `vercel.json` | GitHub Pages 可直接发布，Vercel 使用静态产物 |
+| 范围                                        | 实现位置                                                                             | 状态                                                                         |
+| ------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| 窗口、Dock、菜单、Spotlight、通知、桌面组件 | `scripts/desktop.js`                                                                 | 已实现共用行为                                                               |
+| VS Code 与唯一播放器、歌词同步              | `scripts/apps/vscode.js`、`scripts/player.js`                                        | 已保留并扩展原音乐体验                                                       |
+| QQ 登录页、预设聊天、资料卡、二维码         | `scripts/apps/qq.js`                                                                 | 已按用户截图构建交互元素                                                     |
+| Messages 与 FaceTime                        | `scripts/apps/messages.js`、`facetime.js`、`scripts/guestbook.js`、`call-session.js` | 共用真实 Waline 数据；新增明确标注的通话演示、主动开启的本机预览及设备释放   |
+| Safari、Gmail、网易邮箱、GitHub             | `scripts/apps/safari.js`、`mail.js`、`github.js`                                     | 已实现浏览、站点来信、本地草稿和真实外链交接                                 |
+| 终端、计算器                                | `scripts/apps/tools.js`、`scripts/calculator.js`                                     | 虚拟命令与真实计算                                                           |
+| Finder、备忘录、照片                        | `scripts/apps/files.js`、`notes.js`、`scripts/note-format.js`                        | 最近项目、本地笔记；格式、标签、文件夹、置顶、备份；照片备注及地点／歌曲关联 |
+| 提醒事项                                    | `scripts/apps/reminders.js`、`scripts/reminders-data.js`                             | 清单、今天／计划／已完成视图、日期、优先级、重要标记、桌面组件与日历联动     |
+| 地图                                        | `scripts/apps/maps.js`、`scripts/places.js`                                          | 可操作的在线地图、地点搜索、收藏、最近查看、故事与应用关联、外部路线入口     |
+| App Store                                   | `scripts/apps/appstore.js`、`scripts/app-catalog.js`                                 | 分类、搜索、详情、获取到桌面、固定到 Dock、壁纸精选                          |
+| 时钟与便签                                  | `scripts/apps/clock.js`、`stickies.js`                                               | 世界时钟、秒表、倒计时；可移动／换色／收起的桌面便签                         |
+| 日历、天气                                  | `scripts/apps/calendar.js`、`weather.js`、`scripts/weather.js`                       | 本地提醒、日／周／月、日程导出；选城市获取 Open-Meteo 数据                   |
+| 电话、通讯录、设置                          | `scripts/apps/personal.js`                                                           | 联系名片、拨号体验与可用联系替代入口、外观偏好                               |
+| 废纸篓                                      | `scripts/apps/trash.js`                                                              | 桌面及 Dock 入口；本地笔记、待办、便签和邮件副本的恢复、确认清空             |
+| 资源                                        | `assets/`                                                                            | 真实图标、本机 QQ 图标、头像、三套壁纸及网站二维码；来源逐项记录             |
+| 留言服务                                    | `services/waline/`                                                                   | 可安装运行，持久本地 SQLite；包含生产 PostgreSQL 环境模板和 Vercel 入口      |
+| 静态发布                                    | `tools/build-static.mjs`、根 `vercel.json`                                           | GitHub Pages 可直接发布，Vercel 使用静态产物                                 |
 
 默认壁纸为 `assets/wallpapers/original.jpg`。若浏览器之前已经主动选择过其他壁纸，已保存的偏好会保留；可在设置中切回“最初的桌面”。
+
+## 本轮对照文档的实现
+
+- **P0 窗口**：三色按钮采用独立 SVG 图形，圆形与图形居中，扩大命中区域；放大后切换还原图标。关闭、最小化到 Dock、恢复、放大采用短过渡，可被后续动作取消。VS Code 关闭时先停止音乐，再执行离场动画。
+- **P0 系统细节**：合并适用应用的标题栏与工具栏，统一焦点、按下、菜单与边缘缩放反馈，绿色按钮提供居中／左右布局，保留减少动态效果设置。
+- **P1 入口组织**：默认 Dock 为七个常用应用及所有应用、废纸篓；桌面增加备忘录、提醒事项、地图、App Store、照片，支持拖动、网格排列、按名称／用途排序、右键管理。旧版默认 Dock 自动迁移，用户自定义列表继续保留。
+- **P1 实用应用**：备忘录、提醒事项、地图、应用中心均已实现表中流程。地点查询通过外部 Photon，地图通过 OpenStreetMap 嵌入；前端没有新增运行依赖。
+- **P2 联动**：笔记 → 地图／歌曲／待办，待办 → 日历／来源笔记，照片 → 地图／歌曲，便签 → 笔记，FaceTime → 信息。增加窗口概览、待办到期和倒计时站内通知。
+- 新增五款应用图标均为 Apple 用户指南原始 400px PNG，已本地保存并记录来源和哈希。
+
+没有新增框架、地图 SDK、富文本编辑器依赖或自建视频通信服务。Pages／Vercel 静态部署方式保持不变。
 
 ## 已完成的必要验证
 
@@ -30,17 +45,23 @@
 - 已修复 Waline 默认头像模板在匿名无邮箱时的错误，前端仍只要求昵称。
 - 浏览器已查看 QQ 登录页，完成 Messages 实际发布及 FaceTime 同源来访显示。
 - 后续按用户要求减少逐项 UI 体验测试，具体使用手感与视觉细节交给用户试用反馈。
+- 本轮 `npm test` 共 18 项通过，新增覆盖动画取消与 Dock 几何、晚到媒体流清理、待办日期与日历同步、存储失败、计时状态、备份身份过滤、地图数据与缓存，以及应用本地图标与注册入口。
+- 本轮浏览器检查了桌面加载、备忘录标题栏及放大 → 最小化 → 恢复 → 关闭、App Store 启动，未观察到脚本错误；没有执行真实摄像头／麦克风测试或逐应用完整体验测试。
+- 34 个 JavaScript 模块语法检查通过；`npm run build` 生成纯静态产物。地图查询服务实测返回 HTTP 200 并允许跨域请求。
+- 资源核对修正了旧 GitHub 图标清单：仓库现有深色版本与此前链接的官方源文件不同，已分别记录哈希；本轮保留已有图标文件。
 
 ## 尚需实际环境配置或用户素材
 
 - 正式留言服务域名、生产 PostgreSQL 和站长初始化账号尚未配置。代码已就绪，本地测试库不是线上留言墙。
 - 未发布到用户的 GitHub Pages 或 Vercel 账号；部署流程见 `DEPLOYMENT.md`。
 - 欢迎语音／视频、电话、更多生活照片、真实个人事件和其他歌曲还没有提供，不虚构这些内容。
+- 主人公开地点与愿望清单预留了配置，默认没有虚构地点、旅行故事或愿望；个人照片内容需要补入后才能展示对应故事。
 - 废纸篓目前使用真实旧版 Apple 图形的 32px 归档文件，可替换为更高清的同款资源。
+- 桌面目前采用按用途排列的轻量分组，尚未扩展成可任意嵌套的文件夹系统。
 - macOS 27 的逐像素差异、不同桌面尺寸下的完整体验，等待用户试用后继续调整；本文件不宣称已通过全部视觉验收。
 
 ## 建议直接试用的入口
 
-打开本地桌面后，可以先试 QQ 登录 → 歌曲卡片 → VS Code；再试“信息”留言 → FaceTime 来访；最后查看设置里的壁纸、Dock，以及本地笔记删除后在废纸篓恢复。
+打开本地桌面后，可以先试窗口三色按钮与 Dock，再双击桌面“App Store”“地图”“提醒事项”。用备忘录创建一篇自己的笔记，关联歌曲或收藏地点；在所有应用里打开时钟和便签。FaceTime 的“体验通话”与“体验接听”可直接查看界面，不开启设备也能完成演示。
 
 请反馈具体应用、操作和实际结果，后续可直接在对应模块继续修正。

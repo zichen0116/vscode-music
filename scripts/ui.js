@@ -19,6 +19,10 @@ export const store = {
   set(key, value) {
     try {
       localStorage.setItem(`lozic:${key}`, JSON.stringify(value));
+      if (typeof window !== "undefined")
+        window.dispatchEvent(
+          new CustomEvent("lozic:storage", { detail: { key } }),
+        );
       return true;
     } catch {
       return false;
@@ -112,6 +116,9 @@ export function button(name, label, extra = "") {
   return `<button type="button" class="icon-button" data-action="${h(name)}" title="${h(label)}" aria-label="${h(label)}" ${extra}>${icon(name)}</button>`;
 }
 const paths = {
+  mic: '<rect x="8" y="2" width="8" height="13" rx="4"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/>',
+  micOff:
+    '<path d="m3 3 18 18M8 8v3a4 4 0 0 0 7 3M8 4a4 4 0 0 1 8 2v5M5 10v2a7 7 0 0 0 12 5M19 10v2M12 19v3M8 22h8"/>',
   search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   close: '<path d="m6 6 12 12M18 6 6 18"/>',

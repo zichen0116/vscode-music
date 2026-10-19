@@ -1,12 +1,26 @@
 import {
   appInfo,
   defaultDock,
+  previousDefaultDock,
+  defaultDesktopApps,
   profile,
   wallpapers,
   publicNotes,
 } from "./config.js";
 import { h, icon, store, clamp, on, copy, localDate } from "./ui.js";
 import { player } from "./player.js";
+import {
+  windowEase,
+  dockTarget,
+  transformBetween,
+  trafficLights,
+} from "./window-motion.js";
+import { categoryFor } from "./app-catalog.js";
+import {
+  reminderData,
+  reminderMatches,
+  updateReminder,
+} from "./reminders-data.js";
 
 export function fitRect(rect, width, height, minW = 300, minH = 240) {
   const w = clamp(rect.w, Math.min(minW, width - 20), width - 20);
@@ -35,7 +49,15 @@ export class Desktop extends EventTarget {
       reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
       ...store.get("preferences", {}),
     };
-    this.pinned = store.get("dock", defaultDock).filter((id) => appInfo[id]);
+    const savedDock = store.get("dock", defaultDock);
+    this.pinned = (
+      JSON.stringify(savedDock) === JSON.stringify(previousDefaultDock)
+        ? defaultDock
+        : savedDock
+    ).filter((id) => appInfo[id]);
+    this.desktopApps = store
+      .get("desktopApps", defaultDesktopApps)
+      .filter((id) => appInfo[id] && id !== "trash");
     this.applyPreferences();
     this.renderMenuBar();
     this.renderDock();
@@ -111,14 +133,12 @@ export class Desktop extends EventTarget {
     if (this.today !== localDate(now)) {
       this.today = localDate(now);
       this.renderWidgets();
-      document
-        .querySelectorAll(".calendar-icon-face small")
-        .forEach(
-          (el) =>
-            (el.textContent = now.toLocaleDateString("zh-CN", {
-              weekday: "short",
-            })),
-        );
+      document.querySelectorAll(".calendar-icon-face small").forEach(
+        (el) =>
+          (el.textContent = now.toLocaleDateString("zh-CN", {
+            weekday: "short",
+          })),
+      );
       document
         .querySelectorAll(".calendar-icon-face strong")
         .forEach((el) => (el.textContent = now.getDate()));
@@ -205,7 +225,19 @@ export class Desktop extends EventTarget {
                 action: () => this.open("settings", { tab: "wallpaper" }),
               },
               { label: "添加小组件…", action: () => this.widgetPicker() },
-              { label: "排列桌面图标", action: () => this.renderFiles() },
+              {
+                label: "按名称排列图标",
+                action: () => this.arrangeDesktop("name"),
+              },
+              {
+                label: "按用途分组",
+                action: () => this.arrangeDesktop("category"),
+              },
+              { label: "应用中心…", action: () => this.open("appstore") },
+              {
+                label: "新建桌面便签",
+                action: () => this.open("stickies", { create: true }),
+              },
               { label: "显示桌面", action: () => this.showDesktop() },
             ],
         e,
@@ -217,14 +249,24 @@ export class Desktop extends EventTarget {
         else this.setRect(win, win.rect);
       }
       this.clampWidgets();
+      this.renderFiles();
       this.fitDock();
+    });
+    window.addEventListener("blur", () => {
+      // Embedded maps and websites receive pointer events in their own document.
+      setTimeout(() => {
+        const frame = document.activeElement;
+        const app = frame?.tagName === "IFRAME" && frame.closest(".app-window");
+        if (app && this.windows.has(app.dataset.app))
+          this.focus(app.dataset.app);
+      }, 0);
     });
   }
   open(id, data = {}) {
     if (!this.registry[id]) return;
     this.closeMenu();
     this.closePanel();
-    this.desktopShown = false;
+    if (this.desktopShown) this.showDesktop();
     const existing = this.windows.get(id);
     if (existing) {
       this.restore(id);
@@ -237,7 +279,7 @@ export class Desktop extends EventTarget {
     el.dataset.app = id;
     el.setAttribute("aria-label", info.name);
     el.tabIndex = -1;
-    el.innerHTML = `<header class="windowbar"><div class="traffic-lights"><button data-window="close" class="traffic close" aria-label="关闭 ${h(info.name)}"><span>×</span></button><button data-window="minimize" class="traffic minimize" aria-label="最小化 ${h(info.name)}"><span>−</span></button><button data-window="maximize" class="traffic maximize" aria-label="放大或恢复 ${h(info.name)}"><span>↗</span></button></div><span class="window-title">${h(info.name)}</span><div class="windowbar-end"></div></header><div class="app-content"></div>${["n", "e", "s", "w", "ne", "nw", "se", "sw"].map((d) => `<div class="resize-handle resize-${d}" data-resize="${d}"></div>`).join("")}`;
+    el.innerHTML = `<header class="windowbar">${trafficLights(h(info.name))}<span class="window-title">${h(info.name)}</span><div class="windowbar-end"></div></header><div class="app-content"></div>${["n", "e", "s", "w", "ne", "nw", "se", "sw"].map((d) => `<div class="resize-handle resize-${d}" data-resize="${d}"></div>`).join("")}`;
     const controller = new AbortController(),
       index = this.windows.size;
     const rect = {
@@ -282,6 +324,35 @@ export class Desktop extends EventTarget {
       },
       { signal: controller.signal },
     );
+    let layoutTimer;
+    el.querySelector(".maximize").addEventListener(
+      "pointerenter",
+      () => {
+        layoutTimer = setTimeout(
+          () => this.layoutMenu(id, el.querySelector(".maximize")),
+          650,
+        );
+      },
+      { signal: controller.signal },
+    );
+    el.querySelector(".maximize").addEventListener(
+      "pointerleave",
+      () => clearTimeout(layoutTimer),
+      { signal: controller.signal },
+    );
+    el.querySelector(".maximize").addEventListener(
+      "pointerdown",
+      () => {
+        clearTimeout(layoutTimer);
+        this.closeMenu();
+      },
+      { signal: controller.signal },
+    );
+    controller.signal.addEventListener(
+      "abort",
+      () => clearTimeout(layoutTimer),
+      { once: true },
+    );
     el.querySelector(".windowbar").addEventListener(
       "dblclick",
       (e) => {
@@ -303,26 +374,31 @@ export class Desktop extends EventTarget {
       setTitle: (title) => {
         el.querySelector(".window-title").textContent = title;
       },
-      setSize: (w, ht) => this.setRect(win, { ...win.rect, w, h: ht }),
+      setSize: (w, ht) => this.transitionRect(win, { ...win.rect, w, h: ht }),
       setChrome: (visible) => el.classList.toggle("frameless", !visible),
       menu: (...a) => this.menu(...a),
       dialog: (opts) => this.dialog(opts),
     };
     try {
       win.instance = this.registry[id](ctx) || {};
+      const toolbar = ctx.root.querySelector(":scope > .app-toolbar");
+      if (toolbar) {
+        el.classList.add("integrated-toolbar");
+        toolbar.dataset.dragWindow = "";
+      }
     } catch (error) {
       console.error(error);
       ctx.root.innerHTML =
         '<div class="empty-state"><h2>应用未能打开</h2><p>请关闭窗口后重试。</p></div>';
     }
-    if (!this.prefs.reducedMotion)
-      el.animate(
-        [
-          { opacity: 0, transform: "translateY(24px) scale(.94)" },
-          { opacity: 1, transform: "none" },
-        ],
-        { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" },
-      );
+    this.animateWindow(
+      win,
+      [
+        { opacity: 0, transform: "translateY(14px) scale(.965)" },
+        { opacity: 1, transform: "none" },
+      ],
+      260,
+    );
     document.querySelector(`[data-dock="${id}"]`)?.classList.add("launching");
     setTimeout(
       () =>
@@ -345,19 +421,99 @@ export class Desktop extends EventTarget {
     const label = document.querySelector(".active-app");
     if (label) label.textContent = appInfo[id]?.name || "访达";
   }
+  cancelAnimation(win) {
+    win.motionVersion = (win.motionVersion || 0) + 1;
+    win.animation?.cancel();
+    win.animation = null;
+  }
+  animateWindow(win, frames, duration = 280, finish) {
+    this.cancelAnimation(win);
+    if (this.prefs.reducedMotion || !win.el.animate) {
+      finish?.();
+      return;
+    }
+    const version = win.motionVersion;
+    const animation = win.el.animate(frames, {
+      duration,
+      easing: windowEase,
+      fill: "none",
+    });
+    win.animation = animation;
+    animation.onfinish = () => {
+      if (version !== win.motionVersion) return;
+      win.animation = null;
+      finish?.();
+    };
+  }
+  transitionRect(win, rect, animate = true) {
+    const before = win.el.getBoundingClientRect();
+    this.cancelAnimation(win);
+    this.setRect(win, rect);
+    if (!animate || win.el.hidden) return;
+    const after = win.el.getBoundingClientRect();
+    this.animateWindow(
+      win,
+      [
+        {
+          left: `${before.left}px`,
+          top: `${before.top}px`,
+          width: `${before.width}px`,
+          height: `${before.height}px`,
+        },
+        {
+          left: `${after.left}px`,
+          top: `${after.top}px`,
+          width: `${after.width}px`,
+          height: `${after.height}px`,
+        },
+      ],
+      320,
+    );
+  }
+  nextFocus() {
+    const next = [...this.windows.values()]
+      .filter((w) => w.mode !== "minimized")
+      .sort((a, b) => Number(a.el.style.zIndex) - Number(b.el.style.zIndex))
+      .at(-1);
+    this.focus(next?.id || null);
+  }
   close(id) {
     const win = this.windows.get(id);
     if (!win) return;
+    const visible = !win.el.hidden && win.mode !== "minimized";
+    const rect = win.el.getBoundingClientRect();
+    this.cancelAnimation(win);
+    // Dispose immediately: music and camera must stop before the visual departure finishes.
     win.controller.abort();
-    win.instance?.dispose?.();
     if (id === "vscode") player.stop();
-    win.el.remove();
+    try {
+      win.instance?.dispose?.();
+    } catch (error) {
+      console.error(error);
+    }
     this.windows.delete(id);
-    const remaining = [...this.windows.values()]
-      .filter((w) => w.mode !== "minimized")
-      .sort((a, b) => Number(a.el.style.zIndex) - Number(b.el.style.zIndex));
-    this.focus(remaining.at(-1)?.id || null);
+    win.el.classList.add("is-closing");
+    win.el.setAttribute("aria-hidden", "true");
+    win.el.inert = true;
+    this.nextFocus();
     this.renderDock();
+    if (visible) {
+      Object.assign(win.el.style, {
+        left: `${rect.left}px`,
+        top: `${rect.top}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+      });
+      this.animateWindow(
+        win,
+        [
+          { opacity: 1, transform: "none" },
+          { opacity: 0, transform: "translateY(8px) scale(.975)" },
+        ],
+        170,
+        () => win.el.remove(),
+      );
+    } else win.el.remove();
     this.dispatchEvent(
       new CustomEvent("windowchange", { detail: { id, action: "close" } }),
     );
@@ -365,67 +521,113 @@ export class Desktop extends EventTarget {
   minimize(id) {
     const win = this.windows.get(id);
     if (!win || win.mode === "minimized") return;
+    this.cancelAnimation(win);
     win.previousMode = win.mode;
     win.mode = "minimized";
-    const rect = win.el.getBoundingClientRect(),
-      dock = document
-        .querySelector(`[data-dock="${id}"]`)
-        ?.getBoundingClientRect();
-    if (dock && !this.prefs.reducedMotion) {
-      const animation = win.el.animate(
+    this.renderDock();
+    const rect = win.el.getBoundingClientRect();
+    const dock = document
+      .querySelector(`[data-dock="${id}"] .app-icon`)
+      ?.getBoundingClientRect();
+    if (dock) {
+      const target = dockTarget(rect, dock);
+      this.animateWindow(
+        win,
         [
-          { transform: "none", opacity: 1 },
+          { opacity: 1, transform: "none", transformOrigin: "0 0" },
           {
-            transform: `translate(${dock.x - rect.x - rect.width / 2}px,${dock.y - rect.y}px) scale(.08)`,
             opacity: 0,
+            transform: transformBetween(target, rect),
+            transformOrigin: "0 0",
           },
         ],
-        { duration: 280, easing: "cubic-bezier(.4,0,.8,.4)" },
+        310,
+        () => {
+          if (win.mode === "minimized") win.el.hidden = true;
+        },
       );
-      animation.onfinish = () => {
-        if (win.mode === "minimized") win.el.hidden = true;
-      };
     } else win.el.hidden = true;
-    this.renderDock();
-    if (this.active === id)
-      this.focus(
-        [...this.windows.values()].filter((w) => w.mode !== "minimized").at(-1)
-          ?.id || null,
-      );
+    if (this.active === id) this.nextFocus();
+    this.dispatchEvent(
+      new CustomEvent("windowchange", { detail: { id, action: "minimize" } }),
+    );
   }
   restore(id) {
     const win = this.windows.get(id);
     if (!win) return;
-    win.el.getAnimations().forEach((a) => a.cancel());
+    const minimized = win.mode === "minimized";
+    if (!minimized && !win.el.classList.contains("desktop-hidden")) {
+      this.focus(id);
+      this.renderDock();
+      return;
+    }
+    const visible = !win.el.hidden;
+    const currentVisual = visible ? win.el.getBoundingClientRect() : null;
+    this.cancelAnimation(win);
     win.el.hidden = false;
     win.el.classList.remove("desktop-hidden");
-    if (win.mode === "minimized") win.mode = win.previousMode || "normal";
+    if (minimized) win.mode = win.previousMode || "normal";
     this.focus(id);
     this.renderDock();
+    if (minimized) {
+      const finalRect = win.el.getBoundingClientRect();
+      const dock = document
+        .querySelector(`[data-dock="${id}"] .app-icon`)
+        ?.getBoundingClientRect();
+      if (dock) {
+        const from = currentVisual || dockTarget(finalRect, dock);
+        this.animateWindow(
+          win,
+          [
+            {
+              opacity: visible ? 1 : 0,
+              transform: transformBetween(from, finalRect),
+              transformOrigin: "0 0",
+            },
+            { opacity: 1, transform: "none", transformOrigin: "0 0" },
+          ],
+          320,
+        );
+      }
+    }
+    this.dispatchEvent(
+      new CustomEvent("windowchange", { detail: { id, action: "restore" } }),
+    );
   }
   maximize(id, force = false) {
     const win = this.windows.get(id);
     if (!win) return;
+    if (win.mode === "minimized") this.restore(id);
     if (win.mode === "maximized" && !force) {
       win.mode = "normal";
-      this.setRect(win, win.beforeMax || win.rect);
+      this.transitionRect(win, win.beforeMax || win.rect);
     } else {
       if (win.mode !== "maximized") win.beforeMax = { ...win.rect };
       win.mode = "maximized";
-      this.setRect(win, {
-        x: 10,
-        y: 38,
-        w: innerWidth - 20,
-        h: innerHeight - 130,
-      });
+      this.transitionRect(
+        win,
+        { x: 10, y: 38, w: innerWidth - 20, h: innerHeight - 130 },
+        !force,
+      );
     }
     win.el.classList.toggle("maximized", win.mode === "maximized");
+    win.el
+      .querySelector(".maximize")
+      .setAttribute("aria-pressed", String(win.mode === "maximized"));
     this.focus(id);
   }
   layoutMenu(id, anchor) {
+    if (!this.windows.has(id)) return;
     this.menu(
       [
-        { label: "放大／恢复", action: () => this.maximize(id) },
+        {
+          label:
+            this.windows.get(id).mode === "maximized"
+              ? "恢复原来大小"
+              : "放大窗口",
+          action: () => this.maximize(id),
+        },
+        { label: "窗口居中", action: () => this.tile(id, "center") },
         { label: "窗口置于屏幕左侧", action: () => this.tile(id, "left") },
         { label: "窗口置于屏幕右侧", action: () => this.tile(id, "right") },
       ],
@@ -435,13 +637,27 @@ export class Desktop extends EventTarget {
   tile(id, side) {
     const win = this.windows.get(id);
     if (!win) return;
+    if (win.mode === "minimized") this.restore(id);
+    const normal =
+      win.mode === "maximized" ? win.beforeMax || win.rect : win.rect;
     win.mode = "normal";
-    this.setRect(win, {
-      x: side === "left" ? 10 : innerWidth / 2 + 5,
-      y: 38,
-      w: innerWidth / 2 - 15,
-      h: innerHeight - 130,
-    });
+    win.el.classList.remove("maximized");
+    win.el.querySelector(".maximize").setAttribute("aria-pressed", "false");
+    const rect =
+      side === "center"
+        ? {
+            ...normal,
+            x: (innerWidth - normal.w) / 2,
+            y: Math.max(42, (innerHeight - normal.h - 70) / 2),
+          }
+        : {
+            x: side === "left" ? 10 : innerWidth / 2 + 5,
+            y: 38,
+            w: innerWidth / 2 - 15,
+            h: innerHeight - 130,
+          };
+    this.transitionRect(win, rect);
+    this.focus(id);
   }
   setRect(win, rect) {
     if (win.id === "qq" && win.el.classList.contains("frameless")) {
@@ -466,6 +682,16 @@ export class Desktop extends EventTarget {
     if (!resize && !e.target.closest(".windowbar,[data-drag-window]")) return;
     if (win.mode === "maximized") return;
     e.preventDefault();
+    if (win.animation) {
+      const visual = win.el.getBoundingClientRect();
+      this.cancelAnimation(win);
+      this.setRect(win, {
+        x: visual.left,
+        y: visual.top,
+        w: visual.width,
+        h: visual.height,
+      });
+    }
     const capture = e.target;
     capture.setPointerCapture(e.pointerId);
     win.el.classList.add("moving");
@@ -535,21 +761,43 @@ export class Desktop extends EventTarget {
       if (b) this.open(b.dataset.dock);
       else if (e.target.closest("[data-all-apps]")) this.spotlight(true);
     };
-    dock.onpointermove = (e) => {
-      const items = [...dock.querySelectorAll(".dock-item")];
-      for (const item of items) {
-        const r = item.getBoundingClientRect();
-        const distance = Math.abs(e.clientX - (r.left + r.width / 2));
-        const scale = this.prefs.magnification
-          ? 1 + 0.55 * Math.max(0, 1 - distance / 130) ** 2
-          : 1;
-        item.style.setProperty("--scale", scale);
-      }
+    let dockFrame = 0;
+    const resetMagnification = () => {
+      cancelAnimationFrame(dockFrame);
+      dockFrame = 0;
+      dock.style.setProperty("--dock-spread", "0px");
+      dock.querySelectorAll(".dock-item").forEach((b) => {
+        b.style.setProperty("--scale", 1);
+        b.style.setProperty("--shift-x", "0px");
+      });
     };
-    dock.onpointerleave = () =>
-      dock
-        .querySelectorAll(".dock-item")
-        .forEach((b) => b.style.setProperty("--scale", 1));
+    dock.onpointermove = (e) => {
+      if (dockFrame) cancelAnimationFrame(dockFrame);
+      const x = e.clientX;
+      dockFrame = requestAnimationFrame(() => {
+        dockFrame = 0;
+        const items = [...dock.querySelectorAll(".dock-item")];
+        const geometry = items.map((item) => {
+          const r = item.getBoundingClientRect(),
+            distance = Math.abs(x - r.left - r.width / 2);
+          const scale =
+            this.prefs.magnification && !this.prefs.reducedMotion
+              ? 1 + 0.5 * Math.max(0, 1 - distance / 135) ** 2
+              : 1;
+          return { item, scale, extra: r.width * (scale - 1) };
+        });
+        const spread = geometry.reduce((sum, g) => sum + g.extra, 0);
+        let shift = -spread / 2;
+        for (const g of geometry) {
+          shift += g.extra / 2;
+          g.item.style.setProperty("--scale", g.scale);
+          g.item.style.setProperty("--shift-x", `${shift}px`);
+          shift += g.extra / 2;
+        }
+        dock.style.setProperty("--dock-spread", `${spread}px`);
+      });
+    };
+    dock.onpointerleave = resetMagnification;
     dock.oncontextmenu = (e) => {
       const b = e.target.closest("[data-dock]");
       if (!b) return;
@@ -612,6 +860,7 @@ export class Desktop extends EventTarget {
       dragged = "";
     };
     this.updateTrash();
+    this.updateReminders();
   }
   pin(id) {
     if (id === "trash") return;
@@ -621,42 +870,182 @@ export class Desktop extends EventTarget {
     store.set("dock", this.pinned);
     this.renderDock();
   }
+  addDesktopApp(id) {
+    if (!appInfo[id] || id === "trash") return;
+    if (!this.desktopApps.includes(id)) this.desktopApps.push(id);
+    store.set("desktopApps", this.desktopApps);
+    this.renderFiles();
+    this.dispatchEvent(new Event("desktopchange"));
+  }
+  removeDesktopApp(id) {
+    this.desktopApps = this.desktopApps.filter((x) => x !== id);
+    store.set("desktopApps", this.desktopApps);
+    this.renderFiles();
+    this.dispatchEvent(new Event("desktopchange"));
+  }
+  arrangeDesktop(order = "name") {
+    store.set("desktopOrder", order);
+    store.remove("desktopPositions");
+    this.renderFiles();
+  }
   renderFiles() {
     const root = document.querySelector("#desktop-files");
-    root.innerHTML = `<button class="desktop-file" data-file="finder">${icon("folder", 62)}<span>关于我</span></button><button class="desktop-file" data-file="safari">${this.appImage("safari")}<span>lozic7.com</span></button><button class="desktop-file" data-file="trash">${this.appImage("trash")}<span>废纸篓</span></button>`;
+    const entries = [
+      {
+        id: "about",
+        name: "关于我",
+        app: "finder",
+        folder: true,
+        data: { folder: "documents" },
+      },
+      { id: "website", name: "lozic7.com", app: "safari" },
+      ...this.desktopApps
+        .filter((id) => appInfo[id])
+        .map((id) => ({ id, name: appInfo[id].name, app: id })),
+      { id: "trash", name: "废纸篓", app: "trash" },
+    ];
+    const order = store.get("desktopOrder", "default");
+    if (order === "name")
+      entries.sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+    if (order === "category")
+      entries.sort(
+        (a, b) =>
+          categoryFor(a.app).localeCompare(categoryFor(b.app), "zh-CN") ||
+          a.name.localeCompare(b.name, "zh-CN"),
+      );
+    const saved = store.get("desktopPositions", {}),
+      rows = Math.max(2, Math.floor((innerHeight - 160) / 102));
+    root.innerHTML = entries
+      .map((entry, i) => {
+        const pos = saved[entry.id] || {
+          x: innerWidth - 109 - Math.floor(i / rows) * 102,
+          y: 48 + (i % rows) * 102,
+        };
+        return `<button class="desktop-file" data-entry="${entry.id}" data-file="${entry.app}" style="left:${clamp(pos.x, 12, innerWidth - 95)}px;top:${clamp(pos.y, 38, innerHeight - 175)}px" aria-label="${h(entry.name)}">${entry.folder ? icon("folder", 58) : this.appImage(entry.app)}<span>${h(entry.name)}</span></button>`;
+      })
+      .join("");
+    const entryFor = (b) => entries.find((x) => x.id === b?.dataset.entry);
+    const openEntry = (b) => {
+      const entry = entryFor(b);
+      if (entry) this.open(entry.app, entry.data || {});
+    };
+    let dragged = false;
+    root.onclick = (e) => {
+      const b = e.target.closest("[data-entry]");
+      if (!b) return;
+      if (dragged) {
+        dragged = false;
+        return;
+      }
+      root
+        .querySelectorAll("[data-entry]")
+        .forEach((node) => node.classList.toggle("selected", node === b));
+    };
     root.ondblclick = (e) => {
-      const b = e.target.closest("[data-file]");
-      if (b) this.open(b.dataset.file);
+      if (!dragged) openEntry(e.target.closest("[data-entry]"));
     };
     root.onkeydown = (e) => {
-      const b = e.target.closest("[data-file]");
-      if (b && e.key === "Enter") this.open(b.dataset.file);
+      const b = e.target.closest("[data-entry]");
+      if (b && e.key === "Enter") openEntry(b);
+    };
+    root.onpointerdown = (e) => {
+      const b = e.target.closest("[data-entry]");
+      if (!b || e.button !== 0) return;
+      const origin = { x: b.offsetLeft, y: b.offsetTop },
+        px = e.clientX,
+        py = e.clientY;
+      dragged = false;
+      b.setPointerCapture(e.pointerId);
+      const move = (ev) => {
+        const dx = ev.clientX - px,
+          dy = ev.clientY - py;
+        if (Math.hypot(dx, dy) < 5 && !dragged) return;
+        dragged = true;
+        b.classList.add("dragging");
+        b.style.left = `${clamp(origin.x + dx, 12, innerWidth - 95)}px`;
+        b.style.top = `${clamp(origin.y + dy, 38, innerHeight - 175)}px`;
+      };
+      const end = () => {
+        b.removeEventListener("pointermove", move);
+        b.removeEventListener("pointerup", end);
+        b.removeEventListener("pointercancel", end);
+        b.classList.remove("dragging");
+        if (dragged) {
+          const positions = store.get("desktopPositions", {});
+          positions[b.dataset.entry] = {
+            x: clamp(Math.round(b.offsetLeft / 12) * 12, 12, innerWidth - 95),
+            y: clamp(Math.round(b.offsetTop / 12) * 12, 38, innerHeight - 175),
+          };
+          b.style.left = `${positions[b.dataset.entry].x}px`;
+          b.style.top = `${positions[b.dataset.entry].y}px`;
+          store.set("desktopPositions", positions);
+        }
+      };
+      b.addEventListener("pointermove", move);
+      b.addEventListener("pointerup", end);
+      b.addEventListener("pointercancel", end);
     };
     root.oncontextmenu = (e) => {
-      const b = e.target.closest("[data-file]");
-      if (!b) return;
+      const b = e.target.closest("[data-entry]"),
+        entry = entryFor(b);
+      if (!entry) return;
       e.preventDefault();
       e.stopPropagation();
       this.menu(
         [
-          { label: "打开", action: () => this.open(b.dataset.file) },
-          ...(b.dataset.file === "trash"
+          { label: "打开", action: () => openEntry(b) },
+          ...(entry.app === "trash"
             ? [
                 {
                   label: "清空废纸篓…",
                   action: () => this.open("trash")?.instance?.empty?.(),
                 },
               ]
-            : []),
+            : [
+                {
+                  label: "保留在 Dock",
+                  checked: this.pinned.includes(entry.app),
+                  action: () => this.pin(entry.app),
+                },
+                ...(this.desktopApps.includes(entry.id)
+                  ? [
+                      {
+                        label: "从桌面移除快捷方式",
+                        action: () => this.removeDesktopApp(entry.id),
+                      },
+                    ]
+                  : []),
+              ]),
+          { separator: true },
+          { label: "按名称排列", action: () => this.arrangeDesktop("name") },
+          {
+            label: "按用途分组",
+            action: () => this.arrangeDesktop("category"),
+          },
         ],
         e,
       );
     };
     this.updateTrash();
+    this.updateReminders();
+  }
+  windowOverview() {
+    const windows = [...this.windows.values()];
+    const panel = this.panel(
+      "overview",
+      `<header><b>打开的窗口</b><small>${windows.length} 个应用</small></header><div class="overview-grid">${windows.map((w) => `<button data-overview="${w.id}">${this.appImage(w.id)}<b>${h(appInfo[w.id].name)}</b><span>${w.mode === "minimized" ? "已最小化" : w.mode === "maximized" ? "已放大" : "打开中"}</span></button>`).join("") || '<p class="muted">还没有打开的窗口。</p>'}</div>`,
+    );
+    if (panel)
+      panel.onclick = (e) => {
+        const b = e.target.closest("[data-overview]");
+        if (b) this.open(b.dataset.overview);
+      };
   }
   updateTrash() {
     const full =
       store.get("notes", []).some((n) => n.deleted) ||
+      reminderData().items.some((n) => n.deleted) ||
+      store.get("stickies", []).some((n) => n.deleted) ||
       ["gmail", "netease"].some((kind) =>
         store.get(`${kind}:messages`, []).some((m) => m.folder === "trash"),
       );
@@ -668,6 +1057,35 @@ export class Desktop extends EventTarget {
       );
     this.windows.get("trash")?.instance?.refresh?.();
   }
+  updateReminders() {
+    const active = reminderData().items.filter((i) =>
+      reminderMatches(i, "today"),
+    );
+    this.reminderCount = active.length;
+    document
+      .querySelectorAll('[data-dock="reminders"],[data-file="reminders"]')
+      .forEach((el) => {
+        el.querySelector(".reminders-badge")?.remove();
+        if (active.length)
+          el.insertAdjacentHTML(
+            "beforeend",
+            `<span class="dock-badge reminders-badge">${active.length}</span>`,
+          );
+      });
+    const widget = document.querySelector(".widget-reminders");
+    if (widget) {
+      widget.querySelector(".reminder-widget-count").textContent =
+        active.length;
+      widget.querySelector(".reminder-widget-list").innerHTML =
+        active
+          .slice(0, 3)
+          .map(
+            (i) =>
+              `<div><button data-widget-task="${h(i.id)}" aria-label="完成 ${h(i.title)}"></button><span>${h(i.title)}</span></div>`,
+          )
+          .join("") || "<p>今天，留一点轻松。<br>点这里添加一件小事。</p>";
+    }
+  }
   renderWidgets() {
     const now = new Date(),
       days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(),
@@ -675,6 +1093,11 @@ export class Desktop extends EventTarget {
     const hidden = store.get("hiddenWidgets", []),
       positions = store.get("widgetPositions", {});
     const widgets = [
+      [
+        "reminders",
+        "reminders",
+        '<header><b>今天的提醒</b><strong class="reminder-widget-count">0</strong></header><div class="reminder-widget-list"></div>',
+      ],
       [
         "calendar",
         "calendar",
@@ -708,6 +1131,7 @@ export class Desktop extends EventTarget {
             weather: "small",
             music: "large",
             profile: "small",
+            reminders: "large",
           }[id];
         return `<article class="desktop-widget widget-${id}" data-widget="${id}" data-size="${size}" data-app="${app}" tabindex="0" aria-label="${h(appInfo[app].name)}小组件" ${p ? `style="left:${Number(p.x) || 20}px;top:${Number(p.y) || 50}px"` : ""}>${body}</article>`;
       })
@@ -715,6 +1139,18 @@ export class Desktop extends EventTarget {
     root.onclick = (e) => {
       if (root.dataset.dragged === "yes") {
         root.dataset.dragged = "no";
+        return;
+      }
+      const task = e.target.closest("[data-widget-task]");
+      if (task) {
+        try {
+          updateReminder(task.dataset.widgetTask, {
+            completed: true,
+            completedAt: Date.now(),
+          });
+        } catch (error) {
+          this.toast("未能保存提醒", error.message);
+        }
         return;
       }
       if (e.target.closest("[data-leave-message]")) this.open("messages");
@@ -762,6 +1198,7 @@ export class Desktop extends EventTarget {
     };
     this.clampWidgets();
     this.updatePlaying();
+    this.updateReminders();
     this.dispatchEvent(new Event("widgets"));
   }
   clampWidgets() {
@@ -791,6 +1228,7 @@ export class Desktop extends EventTarget {
         ["calendar", "日历"],
         ["weather", "天气"],
         ["music", "正在播放"],
+        ["reminders", "提醒事项"],
         ["profile", "个人名片"],
       ]
         .map(
@@ -933,6 +1371,8 @@ export class Desktop extends EventTarget {
       ],
       view: [
         { label: "所有应用", action: () => this.spotlight(true) },
+        { label: "窗口概览", action: () => this.windowOverview() },
+        { label: "App Store", action: () => this.open("appstore") },
         { label: "显示桌面", action: () => this.showDesktop() },
         {
           label: this.prefs.theme === "dark" ? "切换浅色外观" : "切换深色外观",
