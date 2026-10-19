@@ -17,7 +17,7 @@ export const profile = {
 };
 export const guestbookConfig = {
   // Set to your deployed Waline server, e.g. https://your-guestbook.vercel.app
-  serverURL: "",
+  serverURL: "https://api.lozic7.com",
   path: "personal-mac/guestbook",
   pageSize: 20,
   pollInterval: 30000,
